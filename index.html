@@ -1980,11 +1980,11 @@
             } else {
                 const avatar = sender === 'user' ? '👤' : '🤖';
                 // Don't enhance AI responses when loading - they're already enhanced
-                const content = msg.content;
+                const messageContent = content;
                 
                 messageDiv.innerHTML = `
                     <div class="message-avatar">${avatar}</div>
-                    <div class="message-content">${content}</div>
+                    <div class="message-content">${messageContent}</div>
                 `;
             }
             
