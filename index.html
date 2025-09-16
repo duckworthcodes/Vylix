@@ -4,8 +4,80 @@
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Vylix - Preserving Heritage, Empowering Craftsmen</title>
+    <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>🎨</text></svg>">
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link href="https://fonts.googleapis.com/css2?family=Dancing+Script:wght@400;500;600;700&display=swap" rel="stylesheet">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        // Import the functions you need from the SDKs you need
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, signOut as fbSignOut, updateProfile, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        // Firebase Storage removed; using Cloudinary instead for image uploads
+        
+        // Your web app's Firebase configuration
+        // TODO: Replace with your actual Firebase project configuration
+        // Get this from Firebase Console > Project Settings > General > Your apps
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHiqfF-TsqIvWBJz4JTxu8QdIMbAgqjNI",
+            authDomain: "vylix-backend.firebaseapp.com",
+            projectId: "vylix-backend",
+            storageBucket: "vylix-backend.firebasestorage.app",
+            messagingSenderId: "904523782409",
+            appId: "1:904523782409:web:2fe8ed4b1eb27d3e4f5bd8",
+            measurementId: "G-HCT8R2LVD0"
+        };
+        
+        // App feature configuration (cost control)
+        // Set enableStorage to true only if you want to use Firebase Storage (may incur costs)
+        const appConfig = { enableStorage: false };
+        window.appConfig = appConfig;
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        // Firebase Storage removed
+        
+        // Make Firebase services globally available
+        window.firebase = { auth, db, signInAnonymously, onAuthStateChanged, createUserWithEmailAndPassword, signInWithEmailAndPassword, fbSignOut, updateProfile, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup, RecaptchaVerifier, signInWithPhoneNumber, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, deleteDoc };
+    </script>
+    
+    <!--
+    FIREBASE SETUP INSTRUCTIONS:
+    
+    1. Create a Firebase project at https://console.firebase.google.com/
+    2. Enable the following services:
+       - Authentication (Anonymous sign-in)
+       - Firestore Database
+       - Storage
+    3. Get your Firebase config from Project Settings > General > Your apps
+    4. Replace the firebaseConfig object above with your actual configuration
+    5. Set up Firestore security rules (see below)
+    6. Set up Storage security rules (see below)
+    
+    FIRESTORE SECURITY RULES:
+    rules_version = '2';
+    service cloud.firestore {
+      match /databases/{database}/documents {
+        match /chats/{chatId} {
+          allow read, write: if request.auth != null && request.auth.uid == resource.data.userId;
+        }
+      }
+    }
+    
+    STORAGE SECURITY RULES:
+    rules_version = '2';
+    service firebase.storage {
+      match /b/{bucket}/o {
+        match /images/{userId}/{allPaths=**} {
+          allow read, write: if request.auth != null && request.auth.uid == userId;
+        }
+      }
+    }
+    -->
+    
     <style>
         * {
             margin: 0;
@@ -1665,7 +1737,7 @@
                         <!-- Saved chats will be loaded here -->
                     </div>
                     <div style="margin-top: auto; padding-top: 1rem; border-top: 1px solid #e5e5e5;">
-                        <div style="font-size: 0.8rem; color: var(--text-light); padding: 0.5rem; cursor: pointer;" onclick="showProfile()">👤 Profile</div>
+                        <div id="profileEntry" style="font-size: 0.8rem; color: var(--text-light); padding: 0.5rem; cursor: pointer;" onclick="showProfile()">👤 Sign in / Register</div>
                         <div style="font-size: 0.8rem; color: var(--primary-teal); padding: 0.5rem; font-weight: 600;">🤖 AI Active</div>
                         <div style="font-size: 0.8rem; color: var(--secondary-red); padding: 0.5rem; cursor: pointer;" onclick="clearAllChats()">🗑️ Clear All</div>
                     </div>
@@ -1709,6 +1781,139 @@
                     </div>
                 </div>
             </div>
+            
+            <!-- Auth Modal (Login / Register) - styled like the reference -->
+            <style>
+                .auth-overlay { position: fixed; inset: 0; background: linear-gradient(135deg, rgba(254,243,226,0.7) 0%, rgba(249,232,201,0.7) 100%); backdrop-filter: blur(6px); -webkit-backdrop-filter: blur(6px); opacity: 0; pointer-events: none; transition: opacity 220ms ease; z-index: 98; }
+                .auth-overlay.active { opacity: 1; pointer-events: auto; }
+                .auth-modal { position: fixed; inset: 0; display: grid; place-items: center; pointer-events: none; z-index: 99; }
+                .auth-card { width: 420px; max-width: 92vw; background: rgba(255,255,255,0.95); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px); border: 1px solid rgba(0,0,0,0.06); box-shadow: 0 10px 30px rgba(0,0,0,0.10); border-radius: 24px; transform: translateY(12px) scale(0.98); opacity: 0; transition: all 260ms ease; pointer-events: none; position: relative; overflow: hidden; }
+                .auth-card::before { content: ""; position: absolute; top: -50%; left: -50%; width: 200%; height: 200%; background: radial-gradient(circle at center, rgba(255, 215, 0, 0.18), transparent 55%); opacity: 0.35; transform: rotate(45deg); }
+                .auth-card.active { transform: translateY(0) scale(1); opacity: 1; }
+                .auth-header { padding: 1.1rem 1.25rem 0.25rem; display: flex; align-items: center; justify-content: space-between; }
+                .auth-title { font-weight: 800; color: #78350f; letter-spacing: 0.3px; font-size: 1.4rem; }
+                .auth-sub { color: #6b7280; font-size: 0.95rem; margin-top: 0.1rem; }
+                .auth-close { background: transparent; border: none; font-size: 1.2rem; color: var(--text-light); cursor: pointer; }
+                .auth-tabs { display: grid; grid-template-columns: 1fr 1fr; margin: 0.75rem 0.95rem; border: 1px solid #ececec; border-radius: 14px; overflow: hidden; }
+                .auth-tab { text-align: center; padding: 0.65rem 0.8rem; font-weight: 700; color: #6b7280; cursor: pointer; background: rgba(255,255,255,0.75); }
+                .auth-tab.active { color: #92400e; background: #fff7ed; }
+                .auth-toggle { display: flex; align-items: center; justify-content: center; margin: 0.35rem 1.1rem 0.6rem; }
+                .auth-toggle-pill { position: relative; width: 160px; height: 36px; background: #f3f4f6; border: 1px solid #e5e7eb; border-radius: 999px; cursor: pointer; display: grid; grid-template-columns: 1fr 1fr; overflow: hidden; }
+                .auth-toggle-knob { position: absolute; top: 2px; left: 2px; width: 76px; height: 32px; background: #fff7ed; border: 1px solid #fde68a; border-radius: 999px; box-shadow: 0 2px 8px rgba(0,0,0,0.06); transition: transform 180ms ease; }
+                .auth-toggle-pill.register .auth-toggle-knob { transform: translateX(80px); }
+                .auth-toggle-label { z-index: 1; display: grid; place-items: center; font-weight: 700; font-size: 0.85rem; color: #6b7280; }
+                .auth-toggle-pill.login .auth-toggle-label--login { color: #92400e; }
+                .auth-toggle-pill.register .auth-toggle-label--register { color: #92400e; }
+                .auth-body { padding: 0.75rem 1.25rem 1.1rem; position: relative; z-index: 1; }
+                .auth-label { display: block; font-size: 0.85rem; font-weight: 600; color: #374151; margin: 0.5rem 0 0.35rem; }
+                .auth-input { width: 100%; padding: 0.7rem 0.85rem; border-radius: 12px; border: 1px solid #e5e7eb; background: rgba(255,255,255,0.95); color: var(--text-dark); outline: none; transition: border 120ms ease, box-shadow 120ms ease; }
+                .auth-input:focus { border-color: #d97706; box-shadow: 0 0 0 3px rgba(217, 119, 6, 0.12); }
+                .auth-input-row { position: relative; }
+                .auth-eye { position: absolute; right: 10px; top: 50%; transform: translateY(-50%); cursor: pointer; color: #9ca3af; }
+                .auth-actions { display: flex; align-items: center; justify-content: space-between; gap: 0.75rem; margin-top: 0.9rem; }
+                .btn-auth { padding: 0.8rem 1rem; border-radius: 12px; border: 1px solid #e5e7eb; background: white; cursor: pointer; font-weight: 700; transition: transform 160ms ease, box-shadow 160ms ease, background 160ms ease; }
+                .btn-auth:hover { transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.08); }
+                .btn-auth.primary { background: #d97706; border-color: #d97706; color: white; width: 100%; }
+                .btn-auth.primary:hover { background: #b45309; }
+                .auth-divider { display: grid; grid-template-columns: 1fr auto 1fr; align-items: center; gap: 0.75rem; margin: 1rem 0; color: #6b7280; font-size: 0.85rem; }
+                .auth-divider::before, .auth-divider::after { content: ""; height: 1px; background: #ececec; }
+                .socials { display: grid; grid-template-columns: 1fr 1fr; gap: 0.7rem; }
+                .social-btn { border: 1px solid #e5e7eb; background: rgba(255,255,255,0.98); border-radius: 12px; padding: 0.65rem; font-weight: 700; cursor: pointer; transition: background 160ms ease, transform 160ms ease, box-shadow 160ms ease; }
+                .social-btn:hover { background: #f9fafb; transform: translateY(-2px); box-shadow: 0 6px 18px rgba(0,0,0,0.06); }
+                .auth-hint { font-size: 0.85rem; color: #6b7280; text-align: center; margin-top: 0.6rem; }
+                .auth-error { color: #b42318; background: #fee4e2; border: 1px solid #fecdca; padding: 0.55rem 0.7rem; border-radius: 10px; font-size: 0.85rem; margin-top: 0.5rem; display: none; }
+                .auth-ornament { position: absolute; opacity: 0.12; font-size: 6.5rem; color: #d97706; pointer-events: none; z-index: 0; }
+            </style>
+            <div id="authOverlay" class="auth-overlay" onclick="closeAuthModal()"></div>
+            <div id="authModal" class="auth-modal" role="dialog" aria-hidden="true" onclick="closeAuthModal()">
+                <div id="authCard" class="auth-card" onclick="event.stopPropagation()">
+                    <div class="auth-ornament" style="top: -8px; left: 10px;">🪔</div>
+                    <div class="auth-ornament" style="bottom: -16px; right: 8px;">🏺</div>
+                    <div class="auth-header">
+                        <div>
+                            <div class="auth-title" style="font-family: 'Playfair Display', serif;">Welcome to Vylix</div>
+                            <div class="auth-sub">Preserving Heritage, Empowering Craftsmen</div>
+                        </div>
+                        <button class="auth-close" onclick="closeAuthModal()" aria-label="Close">✕</button>
+                    </div>
+                    <div class="auth-tabs">
+                        <div id="tabLogin" class="auth-tab active" onclick="switchAuthTab('login')">Login</div>
+                        <div id="tabRegister" class="auth-tab" onclick="switchAuthTab('register')">Register</div>
+                    </div>
+                    <div class="auth-toggle">
+                        <div id="authToggle" class="auth-toggle-pill login" onclick="toggleAuthMode()">
+                            <div class="auth-toggle-knob"></div>
+                            <div class="auth-toggle-label auth-toggle-label--login">Login</div>
+                            <div class="auth-toggle-label auth-toggle-label--register">Register</div>
+                        </div>
+                    </div>
+                    <div class="auth-body">
+                        <div id="authError" class="auth-error"></div>
+                        <div id="loginForm">
+                            <label class="auth-label" for="loginEmail">Email</label>
+                            <input id="loginEmail" class="auth-input" type="email" placeholder="you@example.com">
+                            <label class="auth-label" for="loginPassword">Password</label>
+                            <div class="auth-input-row">
+                                <input id="loginPassword" class="auth-input" type="password" placeholder="••••••••">
+                                <span class="auth-eye" onclick="togglePassword('loginPassword', this)">👁️</span>
+                            </div>
+                            <div style="display:flex; align-items:center; justify-content: space-between; margin-top: 8px; color:#6b7280; font-size:0.85rem;">
+                                <label style="display:flex; align-items:center; gap:6px; cursor:pointer;">
+                                    <input id="rememberEmail" type="checkbox"> Remember email
+                                </label>
+                                <a href="#" onclick="continueGuest(); return false;" style="color:#92400e; font-weight:700;">Continue without account</a>
+                            </div>
+                            <div class="auth-actions">
+                                <button id="loginBtn" class="btn-auth primary" onclick="submitLogin()">Sign In</button>
+                            </div>
+                            <div class="auth-divider">or continue with</div>
+                            <div class="socials">
+                                <button class="social-btn" onclick="oauthSignIn('google')">Google</button>
+                                <button class="social-btn" onclick="openPhoneAuth()">Phone</button>
+                            </div>
+                            <div id="phoneSection" style="display:none; margin-top:10px;">
+                                <label class="auth-label" for="phoneNumber">Phone Number</label>
+                                <input id="phoneNumber" class="auth-input" type="tel" placeholder="+1 555 000 0000">
+                                <div id="recaptchaContainer" style="margin-top:8px;"></div>
+                                <div class="auth-actions" style="margin-top:10px;">
+                                    <button id="sendOtpBtn" class="btn-auth" onclick="sendOtp()">Send OTP</button>
+                                </div>
+                                <div id="otpRow" style="display:none; margin-top:10px;">
+                                    <label class="auth-label" for="otpCode">Enter OTP</label>
+                                    <input id="otpCode" class="auth-input" type="text" placeholder="6-digit code">
+                                    <div class="auth-actions" style="margin-top:10px;">
+                                        <button id="verifyOtpBtn" class="btn-auth primary" onclick="verifyOtp()">Verify & Sign In</button>
+                                    </div>
+                                </div>
+                            </div>
+                            <div class="auth-hint">New here? <a href="#" onclick="switchAuthTab('register'); return false;">Create an account</a></div>
+                        </div>
+                        <div id="registerForm" style="display:none;">
+                            <label class="auth-label" for="regName">Full Name</label>
+                            <input id="regName" class="auth-input" type="text" placeholder="e.g., Aastha Virdi">
+                            <label class="auth-label" for="regEmail">Email</label>
+                            <input id="regEmail" class="auth-input" type="email" placeholder="you@example.com">
+                            <label class="auth-label" for="regPassword">Password</label>
+                            <div class="auth-input-row">
+                                <input id="regPassword" class="auth-input" type="password" placeholder="Min 6 characters" oninput="updatePasswordMeter()">
+                                <span class="auth-eye" onclick="togglePassword('regPassword', this)">👁️</span>
+                            </div>
+                            <div style="height:8px; background:#f3f4f6; border-radius:999px; overflow:hidden; margin-top:6px;"><div id="pwBar" style="height:100%; width:0%; border-radius:999px;"></div></div>
+                            <label class="auth-label" for="regConfirm">Confirm Password</label>
+                            <div class="auth-input-row">
+                                <input id="regConfirm" class="auth-input" type="password" placeholder="Re-enter password">
+                                <span class="auth-eye" onclick="togglePassword('regConfirm', this)">👁️</span>
+                            </div>
+                            <div class="auth-actions">
+                                <button id="registerBtn" class="btn-auth primary" onclick="submitRegister()">Create Account</button>
+                            </div>
+                            <div class="auth-hint">Already have an account? <a href="#" onclick="switchAuthTab('login'); return false;">Sign in</a></div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+            <div id="offlineBanner" style="position:fixed; top:8px; left:50%; transform:translateX(-50%); background:#fef3c7; color:#92400e; border:1px solid #fde68a; padding:6px 12px; border-radius:999px; font-weight:700; box-shadow:0 6px 14px rgba(0,0,0,0.06); z-index:120; display:none;">You are offline. Some features are unavailable.</div>
+            <div id="toast" style="position:fixed; bottom:18px; left:50%; transform:translateX(-50%); background:#111827; color:white; padding:10px 14px; border-radius:12px; font-weight:600; box-shadow:0 10px 20px rgba(0,0,0,0.25); z-index:130; display:none;"></div>
             
             <!-- Voice Interface -->
             <div class="voice-interface" id="voiceInterface">
@@ -1872,6 +2077,152 @@
         let chatMessages = [];
         let savedChats = JSON.parse(localStorage.getItem('vylixChats')) || [];
         let currentChatId = null;
+        let currentUser = null;
+        let firebaseReady = false;
+        
+        // Firebase initialization
+        async function initializeFirebase() {
+            try {
+                // Wait for Firebase to be available
+                while (!window.firebase) {
+                    await new Promise(resolve => setTimeout(resolve, 100));
+                }
+                
+                // Sign in anonymously
+                const { auth, signInAnonymously, onAuthStateChanged } = window.firebase;
+                
+                // Listen for auth state changes
+                onAuthStateChanged(auth, (user) => {
+                    if (user) {
+                        currentUser = user;
+                        console.log('✅ User authenticated:', user.uid);
+                        loadChatHistoryFromFirebase();
+                    } else {
+                        console.log('❌ User not authenticated');
+                    }
+                });
+                
+                // Sign in anonymously
+                await signInAnonymously(auth);
+                firebaseReady = true;
+                console.log('✅ Firebase initialized successfully');
+                
+            } catch (error) {
+                console.error('❌ Firebase initialization failed:', error);
+                // Fallback to localStorage
+                firebaseReady = false;
+            }
+        }
+        
+        // Initialize Firebase when page loads
+        initializeFirebase();
+        
+        // Firestore functions
+        async function saveChatToFirebase(chatData) {
+            if (!firebaseReady || !currentUser) {
+                console.log('Firebase not ready, falling back to localStorage');
+                return false;
+            }
+            
+            try {
+                const { db, collection, addDoc, doc, updateDoc } = window.firebase;
+                
+                // Sanitize messages: do not store large base64 blobs in Firestore
+                const sanitizedMessages = (chatData.messages || []).map(m => {
+                    const copy = { ...m };
+                    if (typeof copy.content === 'string' && copy.content.startsWith('data:image/')) {
+                        copy.content = '[image uploaded]';
+                    }
+                    // Strip any content fields over 300KB to avoid large doc costs
+                    if (typeof copy.content === 'string' && copy.content.length > 300 * 1024) {
+                        copy.content = copy.content.slice(0, 2048) + '... [truncated]';
+                    }
+                    return copy;
+                });
+                
+                if (currentChatId && currentChatId !== chatData.id) {
+                    // Update existing chat
+                    const chatRef = doc(db, 'chats', currentChatId);
+                    await updateDoc(chatRef, {
+                        title: chatData.title,
+                        messages: sanitizedMessages,
+                        updatedAt: new Date().toISOString()
+                    });
+                    console.log('✅ Chat updated in Firestore');
+                } else {
+                    // Add new chat
+                    const docRef = await addDoc(collection(db, 'chats'), {
+                        userId: currentUser.uid,
+                        title: chatData.title,
+                        messages: sanitizedMessages,
+                        createdAt: new Date().toISOString(),
+                        updatedAt: new Date().toISOString()
+                    });
+                    currentChatId = docRef.id;
+                    console.log('✅ Chat saved to Firestore with ID:', docRef.id);
+                }
+                return true;
+            } catch (error) {
+                console.error('❌ Error saving chat to Firestore:', error);
+                return false;
+            }
+        }
+        
+        async function loadChatHistoryFromFirebase() {
+            if (!firebaseReady || !currentUser) {
+                console.log('Firebase not ready, using localStorage');
+                loadChatHistory();
+                return;
+            }
+            
+            try {
+                const { db, collection, getDocs, query, where, orderBy } = window.firebase;
+                
+                const q = query(
+                    collection(db, 'chats'),
+                    where('userId', '==', currentUser.uid),
+                    orderBy('updatedAt', 'desc')
+                );
+                
+                const querySnapshot = await getDocs(q);
+                savedChats = [];
+                
+                querySnapshot.forEach((doc) => {
+                    const data = doc.data();
+                    savedChats.push({
+                        id: doc.id,
+                        title: data.title,
+                        messages: data.messages,
+                        createdAt: data.createdAt,
+                        updatedAt: data.updatedAt
+                    });
+                });
+                
+                console.log('✅ Loaded', savedChats.length, 'chats from Firestore');
+                loadChatHistory();
+                
+            } catch (error) {
+                console.error('❌ Error loading chats from Firestore:', error);
+                loadChatHistory(); // Fallback to localStorage
+            }
+        }
+        
+        async function deleteChatFromFirebase(chatId) {
+            if (!firebaseReady || !currentUser) {
+                console.log('Firebase not ready, using localStorage');
+                return false;
+            }
+            
+            try {
+                const { db, doc, deleteDoc } = window.firebase;
+                await deleteDoc(doc(db, 'chats', chatId));
+                console.log('✅ Chat deleted from Firestore');
+                return true;
+            } catch (error) {
+                console.error('❌ Error deleting chat from Firestore:', error);
+                return false;
+            }
+        }
         
         // Background rotation
         const bgImages = document.querySelectorAll('.bg-image');
@@ -2852,9 +3203,251 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             alert('🎥 Reel editor - edit and enhance your craft videos!');
         }
         
+        // Firebase Email/Password Auth + tiny local fallback for display name
+        const AUTH_KEY = 'vylix_auth_v1';
+        function getLocalAuth() { try { return JSON.parse(localStorage.getItem(AUTH_KEY) || 'null'); } catch (_) { return null; } }
+        function setLocalAuth(obj) { try { localStorage.setItem(AUTH_KEY, JSON.stringify(obj)); } catch (_) {} }
+        function clearLocalAuth() { try { localStorage.removeItem(AUTH_KEY); } catch (_) {} }
+        
         function showProfile() {
-            alert('👤 Profile settings coming soon! This will include user preferences, craft categories, and personalization options.');
+            const overlay = document.getElementById('authOverlay');
+            const card = document.getElementById('authCard');
+            const modal = document.getElementById('authModal');
+            if (!overlay || !card || !modal) return;
+            switchAuthTab('login');
+            overlay.classList.add('active');
+            card.classList.add('active');
+            card.style.pointerEvents = 'auto';
+            modal.setAttribute('aria-hidden', 'false');
+            const err = document.getElementById('authError'); if (err) { err.style.display = 'none'; err.textContent = ''; }
         }
+
+        function closeAuthModal() {
+            const overlay = document.getElementById('authOverlay');
+            const card = document.getElementById('authCard');
+            const modal = document.getElementById('authModal');
+            if (!overlay || !card || !modal) return;
+            overlay.classList.remove('active');
+            card.classList.remove('active');
+            card.style.pointerEvents = 'none';
+            modal.setAttribute('aria-hidden', 'true');
+        }
+
+        function switchAuthTab(tab) {
+            const loginTab = document.getElementById('tabLogin');
+            const registerTab = document.getElementById('tabRegister');
+            const loginForm = document.getElementById('loginForm');
+            const registerForm = document.getElementById('registerForm');
+            const toggle = document.getElementById('authToggle');
+            if (!loginTab || !registerTab || !loginForm || !registerForm) return;
+            const isLogin = tab === 'login';
+            loginTab.classList.toggle('active', isLogin);
+            registerTab.classList.toggle('active', !isLogin);
+            loginForm.style.display = isLogin ? 'block' : 'none';
+            registerForm.style.display = isLogin ? 'none' : 'block';
+            const err = document.getElementById('authError'); if (err) { err.style.display = 'none'; err.textContent = ''; }
+            if (toggle) {
+                toggle.classList.toggle('login', isLogin);
+                toggle.classList.toggle('register', !isLogin);
+            }
+        }
+
+        function showAuthError(msg) {
+            const err = document.getElementById('authError');
+            if (!err) return;
+            err.textContent = msg;
+            err.style.display = 'block';
+        }
+
+        function validateEmail(email) { return /[^\s@]+@[^\s@]+\.[^\s@]+/.test(email); }
+
+        function togglePassword(inputId, el) {
+            const input = document.getElementById(inputId);
+            if (!input) return;
+            input.type = input.type === 'password' ? 'text' : 'password';
+            if (el) el.textContent = input.type === 'password' ? '👁️' : '🙈';
+        }
+
+        function updatePasswordMeter() {
+            const pw = document.getElementById('regPassword')?.value || '';
+            const bar = document.getElementById('pwBar');
+            if (!bar) return;
+            let score = 0;
+            if (pw.length >= 6) score++;
+            if (/[A-Z]/.test(pw)) score++;
+            if (/[0-9]/.test(pw)) score++;
+            if (/[^A-Za-z0-9]/.test(pw)) score++;
+            const width = [0, 25, 50, 75, 100][score];
+            bar.style.width = width + '%';
+            bar.style.background = width < 50 ? '#fca5a5' : width < 75 ? '#fde68a' : '#86efac';
+        }
+
+        function setLoading(isLoading, which) {
+            const btn = which === 'login' ? document.getElementById('loginBtn') : document.getElementById('registerBtn');
+            if (!btn) return;
+            btn.disabled = !!isLoading;
+            if (isLoading) {
+                btn.dataset._text = btn.textContent;
+                btn.textContent = 'Please wait…';
+            } else if (btn.dataset._text) {
+                btn.textContent = btn.dataset._text;
+                delete btn.dataset._text;
+            }
+        }
+
+        function showToast(message, type) {
+            const toast = document.getElementById('toast');
+            if (!toast) return;
+            toast.textContent = message;
+            toast.style.display = 'block';
+            toast.style.background = type === 'error' ? '#7f1d1d' : type === 'success' ? '#065f46' : '#111827';
+            setTimeout(() => { toast.style.display = 'none'; }, 2200);
+        }
+
+        function continueGuest() {
+            try {
+                showToast('Continuing as guest', 'success');
+                closeAuthModal();
+            } catch (_) {}
+        }
+
+        async function oauthSignIn(providerName) {
+            const { auth, GoogleAuthProvider, FacebookAuthProvider, signInWithPopup } = window.firebase || {};
+            if (!auth || !signInWithPopup) return showAuthError('Firebase not ready.');
+            try {
+                let provider = null;
+                if (providerName === 'google' && GoogleAuthProvider) provider = new GoogleAuthProvider();
+                if (providerName === 'facebook' && FacebookAuthProvider) provider = new FacebookAuthProvider();
+                if (!provider) return showAuthError('Provider not available.');
+                setLoading(true, 'login');
+                const result = await signInWithPopup(auth, provider);
+                const user = result.user;
+                showToast(`Welcome ${user.displayName || user.email || ''}`, 'success');
+                updateAuthUI();
+                closeAuthModal();
+            } catch (err) {
+                console.error('OAuth sign-in failed', err);
+                showAuthError(err.message || 'Sign-in failed');
+                showToast('Sign-in failed', 'error');
+            } finally {
+                setLoading(false, 'login');
+            }
+        }
+
+        // Phone Auth helpers
+        let _confirmationResult = null;
+        let _recaptcha = null;
+        function openPhoneAuth() {
+            const section = document.getElementById('phoneSection');
+            if (!section) return;
+            section.style.display = 'block';
+            if (!_recaptcha) {
+                const { auth, RecaptchaVerifier } = window.firebase || {};
+                if (!auth || !RecaptchaVerifier) return showAuthError('Firebase not ready.');
+                _recaptcha = new RecaptchaVerifier(auth, 'recaptchaContainer', { size: 'normal' });
+            }
+        }
+
+        function sendOtp() {
+            const phone = document.getElementById('phoneNumber')?.value.trim();
+            const { auth, signInWithPhoneNumber } = window.firebase || {};
+            if (!auth || !signInWithPhoneNumber) return showAuthError('Firebase not ready.');
+            if (!phone) return showAuthError('Enter a valid phone number with country code.');
+            setLoading(true, 'login');
+            signInWithPhoneNumber(auth, phone, _recaptcha)
+                .then((c) => {
+                    _confirmationResult = c;
+                    document.getElementById('otpRow').style.display = 'block';
+                    showToast('OTP sent', 'success');
+                })
+                .catch(err => { console.error('OTP send failed', err); showAuthError(err.message || 'OTP send failed'); showToast('OTP send failed', 'error'); })
+                .finally(() => setLoading(false, 'login'));
+        }
+
+        function verifyOtp() {
+            const code = document.getElementById('otpCode')?.value.trim();
+            if (!_confirmationResult) return showAuthError('Please request an OTP first.');
+            if (!code) return showAuthError('Enter the OTP code.');
+            setLoading(true, 'login');
+            _confirmationResult.confirm(code)
+                .then(() => { updateAuthUI(); closeAuthModal(); showToast('Phone verified', 'success'); })
+                .catch(err => { console.error('OTP verify failed', err); showAuthError(err.message || 'OTP verify failed'); showToast('OTP verify failed', 'error'); })
+                .finally(() => setLoading(false, 'login'));
+        }
+
+        function submitLogin() {
+            const email = document.getElementById('loginEmail')?.value.trim();
+            const password = document.getElementById('loginPassword')?.value;
+            if (!email || !password) return showAuthError('Please fill all fields.');
+            if (!validateEmail(email)) return showAuthError('Enter a valid email.');
+            if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
+            const { auth, signInWithEmailAndPassword } = window.firebase || {};
+            if (!auth || !signInWithEmailAndPassword) return showAuthError('Firebase not ready.');
+            setLoading(true, 'login');
+            signInWithEmailAndPassword(auth, email, password)
+                .then(() => { updateAuthUI(); closeAuthModal(); showToast('Signed in successfully', 'success'); })
+                .catch(err => { console.error('Login failed', err); showAuthError(err.message || 'Login failed'); showToast('Login failed', 'error'); })
+                .finally(() => setLoading(false, 'login'));
+        }
+
+        function submitRegister() {
+            const name = document.getElementById('regName')?.value.trim();
+            const email = document.getElementById('regEmail')?.value.trim();
+            const password = document.getElementById('regPassword')?.value;
+            const confirm = document.getElementById('regConfirm')?.value;
+            if (!name || !email || !password || !confirm) return showAuthError('Please fill all fields.');
+            if (!validateEmail(email)) return showAuthError('Enter a valid email.');
+            if (password.length < 6) return showAuthError('Password must be at least 6 characters.');
+            if (password !== confirm) return showAuthError('Passwords do not match.');
+            const { auth, createUserWithEmailAndPassword, updateProfile } = window.firebase || {};
+            if (!auth || !createUserWithEmailAndPassword || !updateProfile) return showAuthError('Firebase not ready.');
+            setLoading(true, 'register');
+            createUserWithEmailAndPassword(auth, email, password)
+                .then(async (cred) => {
+                    try { await updateProfile(cred.user, { displayName: name }); } catch (_) {}
+                    setLocalAuth({ name, email });
+                    updateAuthUI();
+                    closeAuthModal();
+                    showToast('Account created', 'success');
+                })
+                .catch(err => { console.error('Registration failed', err); showAuthError(err.message || 'Registration failed'); showToast('Registration failed', 'error'); })
+                .finally(() => setLoading(false, 'register'));
+        }
+
+        function updateAuthUI() {
+            const entry = document.getElementById('profileEntry');
+            const user = (window.firebase && window.firebase.auth && window.firebase.auth.currentUser) || null;
+            if (!entry) return;
+            if (user) {
+                const short = (user.displayName || user.email || 'User');
+                entry.textContent = `👤 ${short} (Sign out)`;
+                entry.onclick = function() { signOut(); };
+            } else {
+                entry.textContent = '👤 Sign in / Register';
+                entry.onclick = function() { showProfile(); };
+            }
+        }
+
+        function toggleAuthMode() {
+            const loginVisible = document.getElementById('loginForm')?.style.display !== 'none';
+            switchAuthTab(loginVisible ? 'register' : 'login');
+        }
+
+        function signOut() {
+            const { auth, fbSignOut } = window.firebase || {};
+            if (auth && fbSignOut) {
+                fbSignOut(auth).then(() => { updateAuthUI(); }).catch(() => { updateAuthUI(); });
+            } else {
+                clearLocalAuth();
+                updateAuthUI();
+            }
+        }
+
+        document.addEventListener('DOMContentLoaded', updateAuthUI);
+        // Offline/online banner
+        window.addEventListener('offline', () => { const b = document.getElementById('offlineBanner'); if (b) b.style.display = 'block'; showToast('You are offline', 'error'); });
+        window.addEventListener('online', () => { const b = document.getElementById('offlineBanner'); if (b) b.style.display = 'none'; showToast('Back online', 'success'); });
+        if (!navigator.onLine) { const b = document.getElementById('offlineBanner'); if (b) b.style.display = 'block'; }
         
         // Chat Management Functions
         function startNewChat() {
@@ -2892,7 +3485,7 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             `;
         }
         
-        function saveCurrentChat() {
+        async function saveCurrentChat() {
             console.log('Saving chat with messages:', chatMessages);
             
             if (chatMessages.length === 0) {
@@ -2913,24 +3506,37 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
                 title: chatTitle,
                 messages: [...chatMessages],
                 createdAt: new Date().toISOString(),
+                updatedAt: new Date().toISOString()
             };
             
             console.log('Chat data to save:', chatData);
             
-            // Update or add chat
-            const existingIndex = savedChats.findIndex(chat => chat.id === currentChatId);
-            if (existingIndex >= 0) {
-                savedChats[existingIndex] = chatData;
-                console.log('Updated existing chat at index:', existingIndex);
-            } else {
-                savedChats.unshift(chatData);
-                currentChatId = chatData.id;
-                console.log('Added new chat with ID:', currentChatId);
-            }
+            // Try to save to Firebase first
+            const firebaseSuccess = await saveChatToFirebase(chatData);
             
-            // Save to localStorage
-            localStorage.setItem('vylixChats', JSON.stringify(savedChats));
-            console.log('Saved to localStorage. Total chats:', savedChats.length);
+            if (firebaseSuccess) {
+                // Update local array for UI
+                const existingIndex = savedChats.findIndex(chat => chat.id === currentChatId);
+                if (existingIndex >= 0) {
+                    savedChats[existingIndex] = chatData;
+                } else {
+                    savedChats.unshift(chatData);
+                }
+            } else {
+                // Fallback to localStorage
+                const existingIndex = savedChats.findIndex(chat => chat.id === currentChatId);
+                if (existingIndex >= 0) {
+                    savedChats[existingIndex] = chatData;
+                    console.log('Updated existing chat at index:', existingIndex);
+                } else {
+                    savedChats.unshift(chatData);
+                    currentChatId = chatData.id;
+                    console.log('Added new chat with ID:', currentChatId);
+                }
+                
+                localStorage.setItem('vylixChats', JSON.stringify(savedChats));
+                console.log('Saved to localStorage. Total chats:', savedChats.length);
+            }
             
             // Update sidebar
             loadChatHistory();
@@ -2938,7 +3544,7 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             // Show success message
             const saveBtn = document.getElementById('saveChatBtn');
             const originalText = saveBtn.innerHTML;
-            saveBtn.innerHTML = '✅ Saved!';
+            saveBtn.innerHTML = firebaseSuccess ? '✅ Saved to Cloud!' : '✅ Saved Locally!';
             saveBtn.style.background = 'linear-gradient(135deg, #28a745, #20c997)';
             
             setTimeout(() => {
@@ -3042,16 +3648,26 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             console.log('Chat loaded successfully!');
         }
         
-        function deleteChat(chatId) {
+        async function deleteChat(chatId) {
             if (confirm('Are you sure you want to delete this chat?')) {
+                // Try to delete from Firebase first
+                const firebaseSuccess = await deleteChatFromFirebase(chatId);
+                
+                // Remove from local array
                 savedChats = savedChats.filter(chat => chat.id !== chatId);
+                
+                // Update localStorage as fallback
                 localStorage.setItem('vylixChats', JSON.stringify(savedChats));
+                
+                // Update UI
                 loadChatHistory();
                 
                 // If this was the current chat, start a new one
                 if (currentChatId === chatId) {
                     startNewChat();
                 }
+                
+                console.log(firebaseSuccess ? '✅ Chat deleted from Firebase' : '⚠️ Chat deleted locally only');
             }
         }
         
@@ -3066,6 +3682,31 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
         
         // Image Upload and Analysis Functions
         let uploadedImageData = null;
+        
+        // Cloudinary unsigned upload for image uploads
+        // Configure these in your Cloudinary dashboard
+        const CLOUDINARY_CLOUD_NAME = 'donctlcuj';
+        const CLOUDINARY_UPLOAD_PRESET = 'vylix_unsigned';
+        const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+        
+        async function uploadImageToCloudinary(file) {
+            try {
+                const formData = new FormData();
+                formData.append('file', file);
+                formData.append('upload_preset', CLOUDINARY_UPLOAD_PRESET);
+                
+                const res = await fetch(CLOUDINARY_UPLOAD_URL, {
+                    method: 'POST',
+                    body: formData
+                });
+                if (!res.ok) throw new Error('Cloudinary upload failed');
+                const data = await res.json();
+                return data.secure_url;
+            } catch (err) {
+                console.error('❌ Cloudinary upload error:', err);
+                return null;
+            }
+        }
         
         async function handleImageUpload(event) {
             const file = event.target.files[0];
@@ -3087,11 +3728,17 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             addMessage('ai', '', true);
             
             try {
-                // Convert image to base64
+                // Convert to base64 for AI analysis (always needed)
                 const base64 = await convertToBase64(file);
                 uploadedImageData = base64;
                 
-                // Analyze image with AI
+                // Try to upload to Cloudinary for storage (optional)
+                const cloudUrl = await uploadImageToCloudinary(file);
+                if (cloudUrl) {
+                    console.log('✅ Image also saved to Cloudinary:', cloudUrl);
+                }
+                
+                // Use base64 for AI analysis
                 await analyzeImageWithAI(base64, file.name);
                 
             } catch (error) {
@@ -3112,18 +3759,18 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             });
         }
         
-        async function analyzeImageWithAI(base64Image, fileName) {
+        async function analyzeImageWithAI(imageData, fileName) {
             try {
                 // Remove loading message
                 const messagesContainer = document.getElementById('chatMessages');
                 messagesContainer.removeChild(messagesContainer.lastChild);
                 
                 // Show image preview and analysis
-                const analysisHTML = createImageAnalysisHTML(base64Image, fileName);
+                const analysisHTML = createImageAnalysisHTML(imageData, fileName);
                 addMessage('ai', analysisHTML);
                 
                 // Get AI analysis using Gemini Vision
-                const analysisResult = await getGeminiVisionAnalysis(base64Image);
+                const analysisResult = await getGeminiVisionAnalysis(imageData);
                 
                 // Update the analysis with real AI data
                 updateImageAnalysis(analysisResult);
@@ -3131,20 +3778,20 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             } catch (error) {
                 console.error('Image analysis error:', error);
                 // Show fallback analysis
-                const fallbackHTML = createFallbackImageAnalysis(base64Image, fileName);
+                const fallbackHTML = createFallbackImageAnalysis(imageData, fileName);
                 const messagesContainer = document.getElementById('chatMessages');
                 messagesContainer.removeChild(messagesContainer.lastChild);
                 addMessage('ai', fallbackHTML);
             }
         }
         
-        function createImageAnalysisHTML(base64Image, fileName) {
+        function createImageAnalysisHTML(imageData, fileName) {
             return `
                 <div class="image-preview-container">
                     <div class="image-analysis-header">
                         🔍 AI Image Analysis
                     </div>
-                    <img src="${base64Image}" alt="Uploaded craft" class="uploaded-image">
+                    <img src="${imageData}" alt="Uploaded craft" class="uploaded-image">
                     <div class="image-loading">
                         <div class="loading-spinner"></div>
                         Analyzing your craft image...
@@ -3153,13 +3800,13 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             `;
         }
         
-        function createFallbackImageAnalysis(base64Image, fileName) {
+        function createFallbackImageAnalysis(imageData, fileName) {
             return `
                 <div class="image-preview-container">
                     <div class="image-analysis-header">
                         📸 Your Craft Image
                     </div>
-                    <img src="${base64Image}" alt="Uploaded craft" class="uploaded-image">
+                    <img src="${imageData}" alt="Uploaded craft" class="uploaded-image">
                     <div class="analysis-grid">
                         <div class="analysis-card">
                             <div class="analysis-card-title">🎨 Craft Type</div>
@@ -3199,7 +3846,7 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
             `;
         }
         
-        async function getGeminiVisionAnalysis(base64Image) {
+        async function getGeminiVisionAnalysis(imageData) {
             try {
                 // Use Gemini Vision API for image analysis
                 const response = await fetch(`${GEMINI_API_URL}?key=${GEMINI_API_KEY}`, {
@@ -3223,7 +3870,7 @@ Make it engaging, highlight traditional techniques, and make it appealing to cus
                                 {
                                     inline_data: {
                                         mime_type: "image/jpeg",
-                                        data: base64Image.split(',')[1]
+                                        data: imageData.split(',')[1]
                                     }
                                 }
                             ]
