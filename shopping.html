@@ -1,0 +1,964 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Vylix - Indian Handicrafts Marketplace</title>
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        body {
+            background-color: #fcedd8;
+            color: #333;
+            line-height: 1.6;
+        }
+        
+        /* Header Styles */
+        header {
+            background-color: #fff;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 15px 40px;
+            position: sticky;
+            top: 0;
+            z-index: 100;
+        }
+        
+        .navbar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+        }
+        
+        .logo {
+            font-size: 28px;
+            font-weight: 700;
+            color: #d35400;
+        }
+        
+        .nav-links {
+            display: flex;
+            list-style: none;
+        }
+        
+        .nav-links li {
+            margin-left: 30px;
+        }
+        
+        .nav-links a {
+            text-decoration: none;
+            color: #333;
+            font-weight: 500;
+            transition: color 0.3s;
+        }
+        
+        .nav-links a:hover {
+            color: #d35400;
+        }
+        
+        /* Hero Section */
+        .hero {
+            height: 500px;
+            background: linear-gradient(rgba(0,0,0,0.5), rgba(0,0,0,0.5)), url('https://images.pexels.com/photos/28389703/pexels-photo-28389703.jpeg');
+            background-size: cover;
+            background-position: center;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            text-align: center;
+            color: white;
+            padding: 0 20px;
+        }
+        
+        .hero-content h1 {
+            font-size: 48px;
+            margin-bottom: 20px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.5);
+        }
+        
+        .hero-content p {
+            font-size: 20px;
+            max-width: 700px;
+            margin: 0 auto 30px;
+        }
+        
+        .btn {
+            display: inline-block;
+            background-color: #d35400;
+            color: white;
+            padding: 12px 30px;
+            border-radius: 30px;
+            text-decoration: none;
+            font-weight: 600;
+            transition: all 0.3s;
+        }
+        
+        .btn:hover {
+            background-color: #e67e22;
+            transform: translateY(-3px);
+        }
+        
+        /* User Selection */
+        .user-selection {
+            padding: 60px 20px;
+            text-align: center;
+        }
+        
+        .user-selection h2 {
+            font-size: 36px;
+            margin-bottom: 40px;
+            color: #333;
+        }
+        
+        .user-cards {
+            display: flex;
+            justify-content: center;
+            gap: 40px;
+            max-width: 1000px;
+            margin: 0 auto;
+        }
+        
+        .user-card {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            width: 300px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        
+        .user-card:hover {
+            transform: translateY(-10px);
+        }
+        
+        .user-card i {
+            font-size: 50px;
+            color: #d35400;
+            margin-bottom: 20px;
+        }
+        
+        .user-card h3 {
+            font-size: 24px;
+            margin-bottom: 15px;
+        }
+        
+        /* Craft Categories */
+        .categories {
+            padding: 60px 20px;
+            background-color: white;
+        }
+        
+        .section-title {
+            text-align: center;
+            font-size: 36px;
+            margin-bottom: 40px;
+            color: #333;
+        }
+        
+        .category-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 25px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .category-card {
+            background: #f9f9f9;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+            cursor: pointer;
+        }
+        
+        .category-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .category-img {
+            height: 180px;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .category-info {
+            padding: 20px;
+            text-align: center;
+        }
+        
+        .category-info h3 {
+            font-size: 20px;
+            margin-bottom: 10px;
+            color: #d35400;
+        }
+        
+        /* Products Section */
+        .products {
+            padding: 60px 20px;
+            max-width: 1200px;
+            margin: 0 auto;
+        }
+        
+        .product-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 30px;
+        }
+        
+        .product-card {
+            background: white;
+            border-radius: 10px;
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s;
+        }
+        
+        .product-card:hover {
+            transform: translateY(-5px);
+        }
+        
+        .product-img {
+            height: 220px;
+            background-size: cover;
+            background-position: center;
+        }
+        
+        .product-info {
+            padding: 20px;
+        }
+        
+        .product-info h3 {
+            font-size: 18px;
+            margin-bottom: 10px;
+            color: #333;
+        }
+        
+        .product-price {
+            font-size: 20px;
+            font-weight: 600;
+            color: #d35400;
+            margin-bottom: 15px;
+        }
+        
+        .view-details {
+            display: block;
+            text-align: center;
+            background-color: #d35400;
+            color: white;
+            padding: 8px 0;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+        }
+        
+        .view-details:hover {
+            background-color: #e67e22;
+        }
+        
+        /* Seller Portal */
+        .seller-portal {
+            padding: 60px 20px;
+            max-width: 800px;
+            margin: 0 auto;
+            display: none;
+        }
+        
+        .seller-form {
+            background: white;
+            border-radius: 15px;
+            padding: 30px;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+        }
+        
+        .form-group {
+            margin-bottom: 20px;
+        }
+        
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 500;
+        }
+        
+        .form-group input,
+        .form-group textarea,
+        .form-group select {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            font-family: 'Poppins', sans-serif;
+        }
+        
+        .form-group textarea {
+            height: 120px;
+            resize: vertical;
+        }
+        
+        .upload-preview {
+            margin-top: 15px;
+            text-align: center;
+        }
+        
+        .upload-preview img {
+            max-width: 100%;
+            max-height: 200px;
+            border-radius: 8px;
+            display: none;
+        }
+        
+        /* Modal Styles */
+        .modal {
+            display: none;
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.7);
+            z-index: 1000;
+            overflow: auto;
+        }
+        
+        .modal-content {
+            background-color: white;
+            margin: 5% auto;
+            padding: 30px;
+            border-radius: 10px;
+            width: 80%;
+            max-width: 600px;
+            position: relative;
+        }
+        
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 15px;
+            font-size: 24px;
+            cursor: pointer;
+            color: #999;
+        }
+        
+        .close-modal:hover {
+            color: #333;
+        }
+        
+        /* Footer */
+        footer {
+            background-color: #333;
+            color: white;
+            padding: 40px 20px;
+            text-align: center;
+        }
+        
+        .footer-content {
+            max-width: 1200px;
+            margin: 0 auto;
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
+            gap: 30px;
+            text-align: left;
+        }
+        
+        .footer-section h3 {
+            font-size: 20px;
+            margin-bottom: 20px;
+            color: #e67e22;
+        }
+        
+        .footer-section p, .footer-section a {
+            color: #ccc;
+            margin-bottom: 10px;
+            display: block;
+            text-decoration: none;
+        }
+        
+        .footer-section a:hover {
+            color: #e67e22;
+        }
+        
+        .social-icons {
+            display: flex;
+            gap: 15px;
+            margin-top: 15px;
+        }
+        
+        .social-icons a {
+            font-size: 20px;
+        }
+        
+        .copyright {
+            margin-top: 40px;
+            padding-top: 20px;
+            border-top: 1px solid #555;
+        }
+        
+        /* Responsive Design */
+        @media (max-width: 768px) {
+            .navbar {
+                flex-direction: column;
+            }
+            
+            .nav-links {
+                margin-top: 20px;
+            }
+            
+            .nav-links li {
+                margin: 0 10px;
+            }
+            
+            .hero-content h1 {
+                font-size: 36px;
+            }
+            
+            .user-cards {
+                flex-direction: column;
+                align-items: center;
+            }
+            
+            .category-grid {
+                grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+    <!-- Header Section -->
+    <header>
+        <div class="navbar">
+            <div class="logo">Vylix</div>
+            <ul class="nav-links">
+                <li><a href="#" class="nav-home">Home</a></li>
+                <li><a href="#">About</a></li>
+                <li><a href="#">Services</a></li>
+                <li><a href="#">Contact</a></li>
+            </ul>
+        </div>
+    </header>
+
+    <!-- Hero Section -->
+    <section class="hero">
+        <div class="hero-content">
+            <h1>Preserving Indian Heritage Through Handicrafts</h1>
+            <p>Discover authentic handmade crafts from skilled artisans across India</p>
+            <a href="#categories" class="btn">Explore Crafts</a>
+        </div>
+    </section>
+
+    <!-- User Selection Section -->
+    <section class="user-selection">
+        <h2>Are you a Seller or Purchaser?</h2>
+        <div class="user-cards">
+            <div class="user-card" onclick="selectUser('seller')">
+                <i class="fas fa-store"></i>
+                <h3>Seller</h3>
+                <p>Upload your crafts to reach customers worldwide</p>
+            </div>
+            <div class="user-card" onclick="selectUser('purchaser')">
+                <i class="fas fa-shopping-cart"></i>
+                <h3>Purchaser</h3>
+                <p>Browse and buy authentic Indian handicrafts</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Craft Categories Section -->
+    <section class="categories" id="categories">
+        <h2 class="section-title">Craft Categories</h2>
+        <div class="category-grid">
+            <div class="category-card" onclick="showCrafts('wood')">
+                <div class="category-img" style="background-image: url('https://mecraaz.com/cdn/shop/articles/Book_Stand_Big_2-01_1400x.jpg?v=1625907529');"></div>
+                <div class="category-info">
+                    <h3>Wood Crafts</h3>
+                    <p>Exquisite carvings and traditional designs</p>
+                </div>
+            </div>
+            <div class="category-card" onclick="showCrafts('metal')">
+                <div class="category-img" style="background-image: url('https://www.sowpeace.in/cdn/shop/articles/what-is-dokra-art-and-why-it-is-so-precious-742786.jpg?v=1736197967');"></div>
+                <div class="category-info">
+                    <h3>Metal Crafts</h3>
+                    <p>Traditional metalwork with intricate details</p>
+                </div>
+            </div>
+            <div class="category-card" onclick="showCrafts('stone')">
+                <div class="category-img" style="background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwMgZVl8hlrw19bSh656rqMbiRBP4nuH1Mag&s');"></div>
+                <div class="category-info">
+                    <h3>Stone Crafts</h3>
+                    <p>Beautiful sculptures and decorative items</p>
+                </div>
+            </div>
+            <div class="category-card" onclick="showCrafts('clay')">
+                <div class="category-img" style="background-image: url('https://www.memeraki.com/cdn/shop/files/Bankura-Horse-in-Terracotta-by-Ranjan-Das-1_800x.png?v=1725387806');"></div>
+                <div class="category-info">
+                    <h3>Clay Crafts</h3>
+                    <p>Traditional pottery and terracotta art</p>
+                </div>
+            </div>
+            <div class="category-card" onclick="showCrafts('textile')">
+                <div class="category-img" style="background-image: url('https://fabricdekho.com/cdn/shop/products/O-01384.jpg?v=1661358613');"></div>
+                <div class="category-info">
+                    <h3>Textile Crafts</h3>
+                    <p>Handwoven fabrics and embroidered textiles</p>
+                </div>
+            </div>
+            <div class="category-card" onclick="showCrafts('glass')">
+                <div class="category-img" style="background-image: url('https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEdMvXO3SjX60vMU07lCc9wwEEionGFQttug&s');"></div>
+                <div class="category-info">
+                    <h3>Glass Crafts</h3>
+                    <p>Beautiful glassware and decorative items</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Products Section (initially hidden) -->
+    <section class="products" id="products-section" style="display: none;">
+        <h2 class="section-title" id="craft-category-title">Wood Crafts</h2>
+        <div class="product-grid" id="product-grid">
+            <!-- Products will be dynamically inserted here -->
+        </div>
+    </section>
+
+    <!-- Seller Portal (initially hidden) -->
+    <section class="seller-portal" id="seller-portal">
+        <h2 class="section-title">Seller Portal</h2>
+        <div class="seller-form">
+            <form id="upload-form">
+                <div class="form-group">
+                    <label for="product-name">Product Name</label>
+                    <input type="text" id="product-name" required>
+                </div>
+                <div class="form-group">
+                    <label for="product-description">Description</label>
+                    <textarea id="product-description" required></textarea>
+                </div>
+                <div class="form-group">
+                    <label for="product-price">Price (₹)</label>
+                    <input type="number" id="product-price" min="1" required>
+                </div>
+                <div class="form-group">
+                    <label for="product-category">Category</label>
+                    <select id="product-category" required>
+                        <option value="">Select a category</option>
+                        <option value="wood">Wood Crafts</option>
+                        <option value="metal">Metal Crafts</option>
+                        <option value="stone">Stone Crafts</option>
+                        <option value="clay">Clay Crafts</option>
+                        <option value="textile">Textile Crafts</option>
+                        <option value="glass">Glass Crafts</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label for="product-image">Upload Image</label>
+                    <input type="file" id="product-image" accept="image/*" required>
+                    <div class="upload-preview">
+                        <img id="image-preview" src="" alt="Image Preview">
+                    </div>
+                </div>
+                <button type="submit" class="btn">Upload Product</button>
+            </form>
+        </div>
+    </section>
+
+    <!-- Product Modal -->
+    <div class="modal" id="product-modal">
+        <div class="modal-content">
+            <span class="close-modal" onclick="closeModal()">&times;</span>
+            <div id="modal-content"></div>
+        </div>
+    </div>
+
+    <!-- Footer -->
+    <footer>
+        <div class="footer-content">
+            <div class="footer-section">
+                <h3>About Vylix</h3>
+                <p>Vylix is dedicated to preserving and promoting Indian handicrafts by connecting artisans with buyers worldwide.</p>
+            </div>
+            <div class="footer-section">
+                <h3>Quick Links</h3>
+                <a href="#">Home</a>
+                <a href="#">About Us</a>
+                <a href="#">Services</a>
+                <a href="#">Contact</a>
+            </div>
+            <div class="footer-section">
+                <h3>Contact Us</h3>
+                <p><i class="fas fa-map-marker-alt"></i> 123 Craft Street, Artisan District, India</p>
+                <p><i class="fas fa-phone"></i> +91 9876543210</p>
+                <p><i class="fas fa-envelope"></i> info@vylix.com</p>
+                <div class="social-icons">
+                    <a href="#"><i class="fab fa-facebook"></i></a>
+                    <a href="#"><i class="fab fa-instagram"></i></a>
+                    <a href="#"><i class="fab fa-twitter"></i></a>
+                    <a href="#"><i class="fab fa-pinterest"></i></a>
+                </div>
+            </div>
+        </div>
+        <div class="copyright">
+            <p>&copy; 2023 Vylix. All rights reserved.</p>
+        </div>
+    </footer>
+
+    <script>
+        // Product data
+        const products = {
+            wood: [
+                {
+                    name: "Book Stand Kashmiri Wood Craft",
+                    price: "₹3,499",
+                    image: "https://mecraaz.com/cdn/shop/articles/Book_Stand_Big_2-01_1400x.jpg?v=1625907529",
+                    description: "Famous for intricate and geometrical motifs carved on walnut wood. This exquisite piece showcases the exceptional craftsmanship of Kashmiri artisans and makes for a perfect decorative item for your home or office."
+                },
+                {
+                    name: "Saharanpur Wood Craft",
+                    price: "₹2,899",
+                    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQ8QUtlPmvlaUA4phHp15PRdsVMmOIW2UCDvw&s",
+                    description: "Saharanpur is renowned for its intricate wood carvings, especially on sheesham wood. This beautiful piece features detailed floral patterns and represents the rich heritage of Uttar Pradesh's woodcraft tradition."
+                },
+                {
+                    name: "Red Sanders Wood Elephant",
+                    price: "₹4,200",
+                    image: "https://i.pinimg.com/564x/12/0e/20/120e205dec33844903116136aec76182.jpg",
+                    description: "Handcrafted from rich red sanders wood, this elegant elephant sculpture symbolizes wisdom, strength, and prosperity. The natural grain of the wood adds to its beauty, making it a perfect decorative piece for any home."
+                },
+                {
+                    name: "Channapatna Toys",
+                    price: "₹1,599",
+                    image: "https://www.zwende.com/cdn/shop/products/craftizen_toys_kathakali_pdp_2.jpg?v=1645076523",
+                    description: "These traditional toys from Channapatna (Karnataka) are made from ivory wood and finished with natural dyes. The non-toxic, child-safe manufacturing process has earned them a Geographical Indication tag."
+                },
+                {
+                    name: "Bastar Wooden Craft",
+                    price: "₹2,350",
+                    image: "https://lsmedia.linker-cdn.net/282256/2021/7138375.jpeg?width=1200&height=1125",
+                    description: "Originating from the tribal regions of Chhattisgarh, Bastar wood crafts reflect the indigenous culture and traditions. This piece features traditional motifs and is carved using simple tools by skilled tribal artisans."
+                },
+                {
+                    name: "Kerala Rosewood Carving - Elephant",
+                    price: "₹5,499",
+                    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRJJB3DwnxKKLTRHrgL-4IaGOB4psvDHU4ctg&s",
+                    description: "Crafted from premium Kerala rosewood, this exquisite elephant carving showcases the exceptional skills of artisans from South India. The deep, rich color and fine detailing make it a valuable collector's item."
+                }
+            ],
+            metal: [
+                {
+                    name: "Dhokra Metal Craft",
+                    price: "₹3,899",
+                    image: "https://www.sowpeace.in/cdn/shop/articles/what-is-dokra-art-and-why-it-is-so-precious-742786.jpg?v=1736197967",
+                    description: "Dhokra is a non-ferrous metal casting using the lost-wax technique. This ancient art form dates back over 4,000 years and is traditionally made by tribal artisans. Each piece is unique and reflects indigenous motifs."
+                },
+                {
+                    name: "Bidriware Jug",
+                    price: "₹4,500",
+                    image: "https://theindiacrafthouse.com/cdn/shop/products/BidriCraftCurio-ArabianJug-C3801X2@2x.jpg",
+                    description: "Bidriware from Karnataka is known for its intricate silver inlay work on blackened zinc and copper alloys. This Arabian jug features elaborate geometric and floral patterns characteristic of this Persian-influenced craft."
+                },
+                {
+                    name: "Bell Metal Craft",
+                    price: "₹3,200",
+                    image: "https://5.imimg.com/data5/VT/LU/MY-12266299/bell-metal-28dhokra-29-handicrafts.jpg",
+                    description: "Crafted from bell metal (an alloy of copper and tin), these artifacts are known for their durability and distinctive sound. The traditional designs often depict tribal deities, animals, and elements from nature."
+                },
+                {
+                    name: "Thanjavur Art Plate",
+                    price: "₹2,799",
+                    image: "https://kuuraii.com/cdn/shop/files/2_9d7b43cb-c856-4921-b77f-0799a5028b09.png?v=1727383839",
+                    description: "Thanjavur art plates are characterized by intricate embossed work on copper, brass, or silver. These decorative plates often feature mythological scenes, deities, and traditional motifs, representing the rich cultural heritage of Tamil Nadu."
+                }
+            ],
+            stone: [
+                {
+                    name: "Agra Marble Inlay",
+                    price: "₹6,999",
+                    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRwMgZVl8hlrw19bSh656rqMbiRBP4nuH1Mag&s",
+                    description: "This exquisite marble inlay work from Agra is the same craft used in the Taj Mahal. Artisans carefully cut and embed semi-precious stones into marble to create intricate floral and geometric patterns."
+                },
+                {
+                    name: "Khajuraho Stone Carving",
+                    price: "₹8,500",
+                    image: "https://www.craftsodisha.com/wp-content/uploads/2021/11/p01601-wa0005-pink-sand-stone-lady-statute-holding-matkas-for-garden-and-park.jpg",
+                    description: "Inspired by the famous temples of Khajuraho, this pink sandstone carving depicts a traditional female form. The craftsmanship reflects the architectural excellence and artistic sensibilities of medieval India."
+                },
+                {
+                    name: "Rajasthan Sandstone Carving",
+                    price: "₹7,200",
+                    image: "https://cdn.thestonestudio.in/wp-content/uploads/2024/04/2-feet-Hanuman-statue-600x600.jpg",
+                    description: "Carved from the distinctive yellow sandstone of Rajasthan, this Hanuman statue exemplifies the region's rich sculpting tradition. The fine details and smooth finish showcase the artisan's exceptional skill."
+                },
+                {
+                    name: "Soapstone Sculpture",
+                    price: "₹3,899",
+                    image: "https://d35l77wxi0xou3.cloudfront.net/collab/craft1576560938Soap%20Stone%20showcase%204.jpg",
+                    description: "Crafted from soft soapstone, this sculpture can be carved with intricate details. The stone's natural variations in color add to the beauty of the piece, making each sculpture unique."
+                }
+            ],
+            clay: [
+                {
+                    name: "Terracotta Bankura Horse",
+                    price: "₹1,899",
+                    image: "https://www.memeraki.com/cdn/shop/files/Bankura-Horse-in-Terracotta-by-Ranjan-Das-1_800x.png?v=1725387806",
+                    description: "The Bankura Horse is a traditional terracotta craft from West Bengal, known for its distinctive elongated neck and upright stance. Originally used as a votive offering, it has become an icon of Bengali folk art."
+                },
+                {
+                    name: "Blue Pottery",
+                    price: "₹2,500",
+                    image: "https://samskarahome.com/cdn/shop/products/BluePotteryWallPlates_SetOf6_662b00a3-31b5-4f39-96f1-cf4415d58a6d.jpg?v=1700555166",
+                    description: "Jaipur's blue pottery is distinguished by its Persian blue dye and intricate floral designs. Unlike traditional pottery, it uses quartz and glass instead of clay, resulting in a unique translucent quality."
+                },
+                {
+                    name: "Molela Terracotta Plaques",
+                    price: "₹2,100",
+                    image: "https://www.prosperitymirra.com/cdn/shop/files/20231103_131537-PhotoRoom.jpg?v=1700657378&width=1090",
+                    description: "From the Molela village in Rajasthan, these terracotta plaques traditionally depict local deities and mythological scenes. The art form has been practiced by the Kumhar community for generations."
+                },
+                {
+                    name: "Kumbhar Pottery",
+                    price: "₹1,599",
+                    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrCb4INov77QJq3U6hU76yoonqFSEvtmcc0Q&s",
+                    description: "Kumbhar pottery refers to the traditional earthenware made by potter communities across India. These functional and decorative items are hand-shaped on wheels and fired in kilns, often featuring regional designs."
+                }
+            ],
+            textile: [
+                {
+                    name: "Banarasi Brocade Saree",
+                    price: "₹12,999",
+                    image: "https://fabricdekho.com/cdn/shop/products/O-01384.jpg?v=1661358613",
+                    description: "Woven with intricate designs in gold and silver zari, Banarasi brocade is synonymous with luxury and elegance. These sarees often feature elaborate floral, foliate, and architectural patterns inspired by Mughal designs."
+                },
+                {
+                    name: "Pashmina Shawl",
+                    price: "₹8,499",
+                    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcRXlo9hGriQgVIRLA-NtkvSlJGXiRjsSi9NHg&s",
+                    description: "Handwoven from the fine undercoat of Himalayan goats, Pashmina shawls are known for their exceptional softness and warmth. The intricate embroidery often features traditional Kashmiri motifs."
+                },
+                {
+                    name: "Kantha Embroidery",
+                    price: "₹3,799",
+                    image: "https://www.embroidery.rocksea.org/images/embroidery/kantha_featured_1.jpg",
+                    description: "Kantha is a traditional embroidery style from West Bengal and Bangladesh, characterized by running stitches that create intricate patterns. Often made from recycled sarees, each piece tells a story through its motifs."
+                },
+                {
+                    name: "Kanchipuram Silk Saree",
+                    price: "₹15,999",
+                    image: "https://www.shutterstock.com/image-photo/traditional-indian-kanchipuram-silk-saree-260nw-2475547005.jpg",
+                    description: "Renowned for their durability and lustrous texture, Kanchipuram silk sarees from Tamil Nadu feature contrasting borders and elaborate pallus woven with gold zari. Traditional motifs include peacocks, parrots, and temple designs."
+                }
+            ],
+            glass: [
+                {
+                    name: "Firozabad Glassware",
+                    price: "₹2,199",
+                    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcSEdMvXO3SjX60vMU07lCc9wwEEionGFQttug&s",
+                    description: "Firozabad is known as the glass capital of India, producing beautiful handcrafted glassware. The traditional techniques include glass blowing, etching, and coloring to create vibrant decorative and utility items."
+                },
+                {
+                    name: "Etikoppa Lacquered Ganesha",
+                    price: "₹1,899",
+                    image: "https://www.gitagged.com/wp-content/uploads/2019/04/ETIKOPPA-VIDYA-GANESHA-GREEN-1.jpg",
+                    description: "From the village of Etikoppa in Andhra Pradesh, these lacquered toys are made from wood and coated with vibrant colored lacquer. The process involves turning wood on a lathe and applying layers of lacquer."
+                },
+                {
+                    name: "Stained Glass Work",
+                    price: "₹3,500",
+                    image: "https://3.imimg.com/data3/TW/YL/MY-2468705/stain-glass-painting-250x250.jpeg",
+                    description: "Indian stained glass art combines traditional techniques with contemporary designs. Pieces often feature religious motifs, floral patterns, and geometric designs in vibrant colors that create beautiful light effects."
+                },
+                {
+                    name: "Glass Jewellery",
+                    price: "₹1,299",
+                    image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAynym2Xo5DmrDxBToF1UTVTWEk2pjF8biqg&s",
+                    description: "Handcrafted glass jewellery from India includes bangles, beads, earrings, and necklaces. Artisans use techniques like glass blowing, lampworking, and etching to create unique pieces with vibrant colors and patterns."
+                }
+            ]
+        };
+
+        // Function to show crafts based on category
+        function showCrafts(category) {
+            const productsSection = document.getElementById('products-section');
+            const productGrid = document.getElementById('product-grid');
+            const categoryTitle = document.getElementById('craft-category-title');
+            
+            // Set category title
+            categoryTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1) + " Crafts";
+            
+            // Clear previous products
+            productGrid.innerHTML = '';
+            
+            // Add products for the selected category
+            products[category].forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                productCard.innerHTML = `
+                    <div class="product-img" style="background-image: url('${product.image}')"></div>
+                    <div class="product-info">
+                        <h3>${product.name}</h3>
+                        <div class="product-price">${product.price}</div>
+                        <p class="product-desc">${product.description}</p>
+                        <a href="#" class="view-details" onclick="showProductDetails('${category}', '${product.name.replace(/'/g, "\\'")}'); return false;">View Details</a>
+                    </div>
+                `;
+                productGrid.appendChild(productCard);
+            });
+            
+            // Show the products section
+            productsSection.style.display = 'block';
+            
+            // Scroll to products section
+            productsSection.scrollIntoView({ behavior: 'smooth' });
+        }
+
+        // Function to show product details in modal
+        function showProductDetails(category, productName) {
+            const product = products[category].find(p => p.name === productName);
+            const modalContent = document.getElementById('modal-content');
+            const modal = document.getElementById('product-modal');
+            
+            modalContent.innerHTML = `
+                <h2>${product.name}</h2>
+                <div style="text-align: center; margin: 20px 0;">
+                    <img src="${product.image}" alt="${product.name}" style="max-width: 100%; height: 300px; object-fit: cover; border-radius: 10px;">
+                </div>
+                <div class="product-price" style="text-align: center; font-size: 24px; margin-bottom: 20px;">${product.price}</div>
+                <p>${product.description}</p>
+                <div style="margin-top: 30px;">
+                    <h3>Purchase Details</h3>
+                    <form id="purchase-form" style="margin-top: 15px;">
+                        <div style="margin-bottom: 15px;">
+                            <label for="quantity" style="display: block; margin-bottom: 5px; font-weight: 500;">Quantity:</label>
+                            <input type="number" id="quantity" min="1" value="1" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        </div>
+                        <div style="margin-bottom: 15px;">
+                            <label for="address" style="display: block; margin-bottom: 5px; font-weight: 500;">Shipping Address:</label>
+                            <textarea id="address" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
+                        </div>
+                        <button type="button" onclick="processPayment()" class="btn" style="width: 100%;">Proceed to Payment</button>
+                    </form>
+                </div>
+            `;
+            
+            modal.style.display = 'block';
+        }
+
+        // Function to close modal
+        function closeModal() {
+            document.getElementById('product-modal').style.display = 'none';
+        }
+
+        // Function to process payment
+        function processPayment() {
+            alert('Payment processed successfully! Thank you for your purchase.');
+            closeModal();
+        }
+
+        // Function to select user type
+        function selectUser(type) {
+            if (type === 'seller') {
+                // Hide other sections and show seller portal
+                document.getElementById('products-section').style.display = 'none';
+                document.getElementById('seller-portal').style.display = 'block';
+                document.getElementById('seller-portal').scrollIntoView({ behavior: 'smooth' });
+            } else {
+                // Hide seller portal and show categories
+                document.getElementById('seller-portal').style.display = 'none';
+                document.getElementById('categories').scrollIntoView({ behavior: 'smooth' });
+            }
+        }
+
+        // Close modal if clicked outside
+        window.onclick = function(event) {
+            const modal = document.getElementById('product-modal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
+
+        // Image preview for seller portal
+        document.getElementById('product-image').addEventListener('change', function(e) {
+            const file = e.target.files[0];
+            if (file) {
+                const reader = new FileReader();
+                reader.onload = function(e) {
+                    const preview = document.getElementById('image-preview');
+                    preview.src = e.target.result;
+                    preview.style.display = 'block';
+                }
+                reader.readAsDataURL(file);
+            }
+        });
+
+        // Form submission for seller portal
+        document.getElementById('upload-form').addEventListener('submit', function(e) {
+            e.preventDefault();
+            
+            const name = document.getElementById('product-name').value;
+            const description = document.getElementById('product-description').value;
+            const price = document.getElementById('product-price').value;
+            const category = document.getElementById('product-category').value;
+            
+            // Simple keyword-based categorization if category is not selected
+            let detectedCategory = category;
+            if (!detectedCategory) {
+                const desc = description.toLowerCase();
+                if (desc.includes('wood') || desc.includes('carving') || desc.includes('walnut')) {
+                    detectedCategory = 'wood';
+                } else if (desc.includes('metal') || desc.includes('brass') || desc.includes('copper')) {
+                    detectedCategory = 'metal';
+                } else if (desc.includes('stone') || desc.includes('marble') || desc.includes('sandstone')) {
+                    detectedCategory = 'stone';
+                } else if (desc.includes('clay') || desc.includes('terracotta') || desc.includes('pottery')) {
+                    detectedCategory = 'clay';
+                } else if (desc.includes('textile') || desc.includes('saree') || desc.includes('fabric')) {
+                    detectedCategory = 'textile';
+                } else if (desc.includes('glass') || desc.includes('glassy')) {
+                    detectedCategory = 'glass';
+                } else {
+                    detectedCategory = 'wood'; // Default category
+                }
+            }
+            
+            // Add the new product to the appropriate category
+            if (!products[detectedCategory]) {
+                products[detectedCategory] = [];
+            }
+            
+            // For demo purposes, we'll use a placeholder image since we can't actually upload to a server
+            const newProduct = {
+                name: name,
+                price: `₹${price}`,
+                image: 'https://via.placeholder.com/300x300.png?text=Uploaded+Product',
+                description: description
+            };
+            
+            products[detectedCategory].push(newProduct);
+            
+            alert(`Product uploaded successfully! It has been categorized as ${detectedCategory} crafts.`);
+            document.getElementById('upload-form').reset();
+            document.getElementById('image-preview').style.display = 'none';
+        });
+
+        // Navigate home when clicking on the logo or home link
+        document.querySelector('.logo').addEventListener('click', function() {
+            document.getElementById('products-section').style.display = 'none';
+            document.getElementById('seller-portal').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+        
+        document.querySelector('.nav-home').addEventListener('click', function(e) {
+            e.preventDefault();
+            document.getElementById('products-section').style.display = 'none';
+            document.getElementById('seller-portal').style.display = 'none';
+            window.scrollTo({ top: 0, behavior: 'smooth' });
+        });
+    </script>
+</body>
+</html>
