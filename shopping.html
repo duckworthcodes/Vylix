@@ -6,6 +6,47 @@
     <title>Vylix - Indian Handicrafts Marketplace</title>
     <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;500;600;700&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+    
+    <!-- Firebase SDK -->
+    <script type="module">
+        import { initializeApp } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-app.js';
+        import { getAuth, signInAnonymously, onAuthStateChanged } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-auth.js';
+        import { getFirestore, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, deleteDoc } from 'https://www.gstatic.com/firebasejs/10.7.1/firebase-firestore.js';
+        
+        // Firebase configuration (same as index.html)
+        const firebaseConfig = {
+            apiKey: "AIzaSyBHiqfF-TsqIvWBJz4JTxu8QdIMbAgqjNI",
+            authDomain: "vylix-backend.firebaseapp.com",
+            projectId: "vylix-backend",
+            storageBucket: "vylix-backend.firebasestorage.app",
+            messagingSenderId: "904523782409",
+            appId: "1:904523782409:web:2fe8ed4b1eb27d3e4f5bd8",
+            measurementId: "G-HCT8R2LVD0"
+        };
+        
+        // Initialize Firebase
+        const app = initializeApp(firebaseConfig);
+        const auth = getAuth(app);
+        const db = getFirestore(app);
+        
+        // Make Firebase services globally available
+        window.firebase = { auth, db, signInAnonymously, onAuthStateChanged, collection, addDoc, getDocs, query, orderBy, where, doc, updateDoc, deleteDoc };
+        
+        // Initialize authentication
+        signInAnonymously(auth).then(() => {
+            console.log('✅ Firebase initialized successfully for shopping platform');
+        }).catch((error) => {
+            console.error('❌ Firebase initialization failed:', error);
+        });
+        
+        // Cloudinary configuration
+        const CLOUDINARY_CLOUD_NAME = 'donctlcuj';
+        const CLOUDINARY_UPLOAD_PRESET = 'vylix_unsigned';
+        const CLOUDINARY_UPLOAD_URL = `https://api.cloudinary.com/v1_1/${CLOUDINARY_CLOUD_NAME}/image/upload`;
+        
+        // Make Cloudinary config globally available
+        window.cloudinary = { CLOUDINARY_CLOUD_NAME, CLOUDINARY_UPLOAD_PRESET, CLOUDINARY_UPLOAD_URL };
+    </script>
     <style>
         * {
             margin: 0;
@@ -62,6 +103,215 @@
             color: #d35400;
         }
         
+        .cart-icon {
+            position: relative;
+            margin-left: 20px;
+        }
+        
+        .cart-count {
+            position: absolute;
+            top: -8px;
+            right: -8px;
+            background-color: #d35400;
+            color: white;
+            border-radius: 50%;
+            width: 20px;
+            height: 20px;
+            font-size: 12px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+        
+        /* Amazon-style Mini Cart Dropdown */
+        .cart-dropdown {
+            position: absolute;
+            top: 100%;
+            right: 0;
+            width: 350px;
+            background: white;
+            border: 1px solid #ddd;
+            border-radius: 8px;
+            box-shadow: 0 4px 20px rgba(0,0,0,0.15);
+            z-index: 1000;
+            display: none;
+            margin-top: 10px;
+        }
+        
+        .cart-dropdown.show {
+            display: block;
+        }
+        
+        .cart-dropdown-header {
+            padding: 15px 20px;
+            border-bottom: 1px solid #eee;
+            background: #f8f9fa;
+            border-radius: 8px 8px 0 0;
+        }
+        
+        .cart-dropdown-header h4 {
+            margin: 0;
+            color: #333;
+            font-size: 16px;
+            display: flex;
+            align-items: center;
+            gap: 8px;
+        }
+        
+        .cart-dropdown-items {
+            max-height: 300px;
+            overflow-y: auto;
+        }
+        
+        .cart-dropdown-item {
+            display: flex;
+            align-items: center;
+            padding: 15px 20px;
+            border-bottom: 1px solid #f0f0f0;
+            transition: background-color 0.2s;
+        }
+        
+        .cart-dropdown-item:hover {
+            background-color: #f8f9fa;
+        }
+        
+        .cart-dropdown-item:last-child {
+            border-bottom: none;
+        }
+        
+        .cart-dropdown-item img {
+            width: 50px;
+            height: 50px;
+            object-fit: cover;
+            border-radius: 4px;
+            margin-right: 12px;
+        }
+        
+        .cart-dropdown-item-info {
+            flex: 1;
+            min-width: 0;
+        }
+        
+        .cart-dropdown-item-name {
+            font-size: 14px;
+            font-weight: 500;
+            color: #333;
+            margin-bottom: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+        }
+        
+        .cart-dropdown-item-price {
+            font-size: 14px;
+            font-weight: 600;
+            color: #d35400;
+        }
+        
+        .cart-dropdown-item-remove {
+            background: none;
+            border: none;
+            color: #dc3545;
+            cursor: pointer;
+            padding: 4px;
+            border-radius: 3px;
+            transition: background-color 0.2s;
+        }
+        
+        .cart-dropdown-item-remove:hover {
+            background-color: #f8d7da;
+        }
+        
+        .cart-dropdown-footer {
+            padding: 15px 20px;
+            border-top: 1px solid #eee;
+            background: #f8f9fa;
+            border-radius: 0 0 8px 8px;
+        }
+        
+        .cart-dropdown-total {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 15px;
+        }
+        
+        .cart-dropdown-total-label {
+            font-size: 16px;
+            font-weight: 600;
+            color: #333;
+        }
+        
+        .cart-dropdown-total-amount {
+            font-size: 18px;
+            font-weight: 700;
+            color: #d35400;
+        }
+        
+        .cart-dropdown-actions {
+            display: flex;
+            gap: 10px;
+        }
+        
+        .cart-dropdown-btn {
+            flex: 1;
+            padding: 10px 15px;
+            border: none;
+            border-radius: 5px;
+            font-weight: 500;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-decoration: none;
+            text-align: center;
+            font-size: 14px;
+        }
+        
+        .cart-dropdown-btn-primary {
+            background-color: #d35400;
+            color: white;
+        }
+        
+        .cart-dropdown-btn-primary:hover {
+            background-color: #e67e22;
+        }
+        
+        .cart-dropdown-btn-secondary {
+            background-color: #6c757d;
+            color: white;
+        }
+        
+        .cart-dropdown-btn-secondary:hover {
+            background-color: #5a6268;
+        }
+        
+        .cart-dropdown-empty {
+            padding: 40px 20px;
+            text-align: center;
+            color: #666;
+        }
+        
+        .cart-dropdown-empty i {
+            font-size: 40px;
+            color: #ddd;
+            margin-bottom: 15px;
+        }
+        
+        .cart-dropdown-empty p {
+            margin: 0;
+            font-size: 14px;
+        }
+        
+        /* Cart icon positioning */
+        .cart-icon {
+            position: relative;
+            margin-left: 20px;
+        }
+        
+        .cart-icon a {
+            position: relative;
+            display: block;
+        }
+        
         /* Hero Section */
         .hero {
             height: 500px;
@@ -88,20 +338,69 @@
             margin: 0 auto 30px;
         }
         
+        /* Modern Evil Seahorse Style Button */
         .btn {
+            position: relative;
             display: inline-block;
-            background-color: #d35400;
-            color: white;
             padding: 12px 30px;
-            border-radius: 30px;
+            background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+            color: #fff;
             text-decoration: none;
             font-weight: 600;
-            transition: all 0.3s;
+            border-radius: 8px;
+            border: 2px solid transparent;
+            transition: all 0.3s ease;
+            overflow: hidden;
+            box-shadow: 0 4px 15px rgba(0, 0, 0, 0.3);
+        }
+        
+        .btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.2), transparent);
+            transition: left 0.5s;
+        }
+        
+        .btn:hover::before {
+            left: 100%;
         }
         
         .btn:hover {
-            background-color: #e67e22;
-            transform: translateY(-3px);
+            background: linear-gradient(45deg, #2d2d2d, #1a1a1a);
+            transform: translateY(-2px);
+            box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+            border-color: #444;
+        }
+        
+        .btn:active {
+            transform: translateY(0);
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.3);
+        }
+        
+        /* Checkout Button Hover Effect */
+        .checkout-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .checkout-btn:hover::before {
+            left: 100%;
+        }
+        
+        .checkout-btn:hover {
+            background: linear-gradient(45deg, #2d2d2d, #1a1a1a) !important;
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.4) !important;
         }
         
         /* User Selection */
@@ -251,17 +550,99 @@
         .view-details {
             display: block;
             text-align: center;
-            background-color: #d35400;
+            background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
             color: white;
             padding: 8px 0;
             border-radius: 5px;
             text-decoration: none;
             font-weight: 500;
-            transition: background-color 0.3s;
+            transition: all 0.3s ease;
+            border: 1px solid #444;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .view-details::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .view-details:hover::before {
+            left: 100%;
         }
         
         .view-details:hover {
-            background-color: #e67e22;
+            background: linear-gradient(45deg, #2d2d2d, #1a1a1a);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+        }
+        
+        .product-actions {
+            display: flex;
+            gap: 10px;
+            margin-top: 10px;
+        }
+        
+        .delete-btn {
+            background-color: #dc3545;
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: background-color 0.3s;
+            border: none;
+            cursor: pointer;
+            font-size: 14px;
+        }
+        
+        .delete-btn:hover {
+            background-color: #c82333;
+        }
+        
+        .add-to-cart-btn {
+            background: linear-gradient(45deg, #1a1a1a, #2d2d2d);
+            color: white;
+            padding: 8px 15px;
+            border-radius: 5px;
+            text-decoration: none;
+            font-weight: 500;
+            transition: all 0.3s ease;
+            border: 1px solid #444;
+            cursor: pointer;
+            font-size: 14px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+            position: relative;
+            overflow: hidden;
+        }
+        
+        .add-to-cart-btn::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: -100%;
+            width: 100%;
+            height: 100%;
+            background: linear-gradient(90deg, transparent, rgba(255, 255, 255, 0.1), transparent);
+            transition: left 0.5s;
+        }
+        
+        .add-to-cart-btn:hover::before {
+            left: 100%;
+        }
+        
+        .add-to-cart-btn:hover {
+            background: linear-gradient(45deg, #2d2d2d, #1a1a1a);
+            transform: translateY(-1px);
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
         }
         
         /* Seller Portal */
@@ -428,6 +809,44 @@
             .category-grid {
                 grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
             }
+            
+            /* Mobile cart dropdown */
+            .cart-dropdown {
+                width: 300px;
+                right: -50px;
+            }
+            
+            .cart-dropdown-item {
+                padding: 12px 15px;
+            }
+            
+            .cart-dropdown-item img {
+                width: 40px;
+                height: 40px;
+            }
+            
+            .cart-dropdown-item-name {
+                font-size: 13px;
+            }
+            
+            .cart-dropdown-item-price {
+                font-size: 13px;
+            }
+        }
+        
+        @media (max-width: 480px) {
+            .cart-dropdown {
+                width: 280px;
+                right: -80px;
+            }
+            
+            .cart-dropdown-actions {
+                flex-direction: column;
+            }
+            
+            .cart-dropdown-btn {
+                margin-bottom: 5px;
+            }
         }
     </style>
 </head>
@@ -441,6 +860,29 @@
                 <li><a href="#">About</a></li>
                 <li><a href="#">Services</a></li>
                 <li><a href="#">Contact</a></li>
+                <li class="cart-icon">
+                    <a href="#" onclick="toggleCartDropdown(event)">
+                        <i class="fas fa-shopping-cart"></i>
+                        <span class="cart-count" id="cart-count">0</span>
+                    </a>
+                    <!-- Amazon-style Mini Cart Dropdown -->
+                    <div class="cart-dropdown" id="cart-dropdown">
+                        <div class="cart-dropdown-header">
+                            <h4><i class="fas fa-shopping-cart"></i> Your Cart</h4>
+                        </div>
+                        <div class="cart-dropdown-items" id="cart-dropdown-items">
+                            <!-- Cart items will be loaded here -->
+                        </div>
+                        <div class="cart-dropdown-footer" id="cart-dropdown-footer">
+                            <!-- Footer content will be loaded here -->
+                        </div>
+                    </div>
+                </li>
+                <li>
+                    <a href="#" onclick="checkout()" class="checkout-btn" style="background: linear-gradient(45deg, #1a1a1a, #2d2d2d); color: white; padding: 8px 15px; border-radius: 8px; text-decoration: none; font-weight: 500; transition: all 0.3s ease; border: 1px solid #444; position: relative; overflow: hidden; box-shadow: 0 2px 8px rgba(0, 0, 0, 0.3);">
+                        <i class="fas fa-credit-card"></i> Checkout
+                    </a>
+                </li>
             </ul>
         </div>
     </header>
@@ -520,11 +962,11 @@
         </div>
     </section>
 
-    <!-- Products Section (initially hidden) -->
-    <section class="products" id="products-section" style="display: none;">
-        <h2 class="section-title" id="craft-category-title">Wood Crafts</h2>
+    <!-- Featured Products Section -->
+    <section class="products" id="products-section">
+        <h2 class="section-title">Featured Handicrafts</h2>
         <div class="product-grid" id="product-grid">
-            <!-- Products will be dynamically inserted here -->
+            <!-- Featured products will be displayed here -->
         </div>
     </section>
 
@@ -610,7 +1052,7 @@
     </footer>
 
     <script>
-        // Product data
+        // Product data - Cleaned up with 4-7 products per category
         const products = {
             wood: [
                 {
@@ -636,12 +1078,6 @@
                     price: "₹1,599",
                     image: "https://www.zwende.com/cdn/shop/products/craftizen_toys_kathakali_pdp_2.jpg?v=1645076523",
                     description: "These traditional toys from Channapatna (Karnataka) are made from ivory wood and finished with natural dyes. The non-toxic, child-safe manufacturing process has earned them a Geographical Indication tag."
-                },
-                {
-                    name: "Bastar Wooden Craft",
-                    price: "₹2,350",
-                    image: "https://lsmedia.linker-cdn.net/282256/2021/7138375.jpeg?width=1200&height=1125",
-                    description: "Originating from the tribal regions of Chhattisgarh, Bastar wood crafts reflect the indigenous culture and traditions. This piece features traditional motifs and is carved using simple tools by skilled tribal artisans."
                 },
                 {
                     name: "Kerala Rosewood Carving - Elephant",
@@ -674,6 +1110,78 @@
                     price: "₹2,799",
                     image: "https://kuuraii.com/cdn/shop/files/2_9d7b43cb-c856-4921-b77f-0799a5028b09.png?v=1727383839",
                     description: "Thanjavur art plates are characterized by intricate embossed work on copper, brass, or silver. These decorative plates often feature mythological scenes, deities, and traditional motifs, representing the rich cultural heritage of Tamil Nadu."
+                },
+                {
+                    name: "Brass Ganesha Statue",
+                    price: "₹2,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Beautiful brass Ganesha statue with intricate detailing. Handcrafted by skilled artisans, this piece brings prosperity and good luck to your home. Perfect for prayer rooms or decorative purposes."
+                },
+                {
+                    name: "Silver Jewelry Set",
+                    price: "₹5,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Elegant silver jewelry set featuring traditional Indian designs. Includes necklace, earrings, and bracelet. Handcrafted with intricate filigree work by master artisans."
+                },
+                {
+                    name: "Metal Wall Hanging",
+                    price: "₹3,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Decorative metal wall hanging with traditional motifs. Made from brass with copper inlay work. Perfect for adding ethnic charm to your living space."
+                },
+                {
+                    name: "Bronze Candle Holder",
+                    price: "₹1,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Handcrafted bronze candle holder with intricate carvings. Features traditional Indian patterns and provides a warm, ambient glow. Perfect for meditation or romantic dinners."
+                },
+                {
+                    name: "Metal Wind Chime",
+                    price: "₹2,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Beautiful metal wind chime with melodious tones. Made from brass and copper, featuring traditional Indian bells. Creates soothing sounds in your garden or balcony."
+                },
+                {
+                    name: "Copper Water Pot Set",
+                    price: "₹3,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Traditional copper water pot set with Ayurvedic benefits. Hand-hammered by skilled craftsmen, helps purify water naturally. Set of 2 pots with lids."
+                },
+                {
+                    name: "Brass Oil Lamp",
+                    price: "₹1,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Traditional brass oil lamp (diya) for religious ceremonies and festivals. Handcrafted with intricate designs and perfect for prayer rooms."
+                },
+                {
+                    name: "Silver Tea Set",
+                    price: "₹8,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Elegant silver tea set with traditional Indian patterns. Includes teapot, sugar bowl, milk jug, and 4 cups. Perfect for special occasions."
+                },
+                {
+                    name: "Bronze Buddha Statue",
+                    price: "₹4,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Serene bronze Buddha statue with intricate detailing. Hand-cast by skilled artisans, perfect for meditation spaces or garden decoration."
+                },
+                {
+                    name: "Copper Kitchen Utensils Set",
+                    price: "₹2,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of traditional copper kitchen utensils including ladles, spoons, and bowls. Hand-hammered with beautiful patina finish."
+                },
+                {
+                    name: "Brass Decorative Plates",
+                    price: "₹1,800",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Set of 3 decorative brass plates with traditional Indian motifs. Perfect for wall decoration or serving purposes."
+                },
+                {
+                    name: "Metal Garden Sculpture",
+                    price: "₹5,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Beautiful metal garden sculpture featuring traditional Indian designs. Made from weather-resistant metal, perfect for outdoor spaces."
                 }
             ],
             stone: [
@@ -700,6 +1208,84 @@
                     price: "₹3,899",
                     image: "https://d35l77wxi0xou3.cloudfront.net/collab/craft1576560938Soap%20Stone%20showcase%204.jpg",
                     description: "Crafted from soft soapstone, this sculpture can be carved with intricate details. The stone's natural variations in color add to the beauty of the piece, making each sculpture unique."
+                },
+                {
+                    name: "Granite Buddha Statue",
+                    price: "₹4,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Serene granite Buddha statue hand-carved by skilled artisans. Features intricate details and a peaceful expression. Perfect for meditation spaces or garden decoration."
+                },
+                {
+                    name: "Marble Lotus Bowl",
+                    price: "₹2,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Beautiful marble lotus bowl with delicate petals carved around the rim. Made from premium white marble, this piece symbolizes purity and enlightenment."
+                },
+                {
+                    name: "Stone Garden Fountain",
+                    price: "₹12,000",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Elegant stone garden fountain with traditional Indian motifs. Made from weather-resistant granite, perfect for outdoor spaces. Creates a peaceful ambiance with flowing water."
+                },
+                {
+                    name: "Jade Elephant Figurine",
+                    price: "₹3,200",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Exquisite jade elephant figurine symbolizing wisdom and strength. Hand-carved from natural jade stone with intricate detailing. A perfect gift or decorative piece."
+                },
+                {
+                    name: "Stone Coaster Set",
+                    price: "₹1,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Set of 6 stone coasters made from natural slate. Each coaster features unique patterns and is perfect for protecting your furniture while adding rustic charm."
+                },
+                {
+                    name: "Limestone Wall Art",
+                    price: "₹5,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Stunning limestone wall art featuring traditional Indian patterns. Hand-carved with intricate details, this piece adds elegance and cultural richness to any wall."
+                },
+                {
+                    name: "Marble Pen Stand",
+                    price: "₹1,800",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Elegant marble pen stand with traditional Indian carvings. Made from premium white marble, perfect for your desk or office."
+                },
+                {
+                    name: "Granite Mortar and Pestle",
+                    price: "₹2,200",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Traditional granite mortar and pestle for grinding spices. Hand-carved from natural granite, perfect for authentic Indian cooking."
+                },
+                {
+                    name: "Soapstone Elephant Figurine",
+                    price: "₹2,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Beautiful soapstone elephant figurine with intricate carvings. Hand-carved by skilled artisans, perfect for home decoration."
+                },
+                {
+                    name: "Marble Photo Frame",
+                    price: "₹1,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Elegant marble photo frame with traditional Indian motifs. Hand-carved and polished, perfect for displaying precious memories."
+                },
+                {
+                    name: "Stone Garden Bench",
+                    price: "₹15,000",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Beautiful stone garden bench with traditional Indian designs. Made from weather-resistant stone, perfect for outdoor spaces."
+                },
+                {
+                    name: "Marble Candle Holder Set",
+                    price: "₹2,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 3 marble candle holders with intricate carvings. Hand-carved from premium marble, perfect for creating ambient lighting."
+                },
+                {
+                    name: "Granite Kitchen Counter",
+                    price: "₹25,000",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Premium granite kitchen counter with traditional Indian patterns. Custom-made to fit your kitchen, durable and beautiful."
                 }
             ],
             clay: [
@@ -726,6 +1312,84 @@
                     price: "₹1,599",
                     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcQrCb4INov77QJq3U6hU76yoonqFSEvtmcc0Q&s",
                     description: "Kumbhar pottery refers to the traditional earthenware made by potter communities across India. These functional and decorative items are hand-shaped on wheels and fired in kilns, often featuring regional designs."
+                },
+                {
+                    name: "Clay Diya Set",
+                    price: "₹800",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Beautiful set of 12 clay diyas (oil lamps) for festivals and celebrations. Hand-molded by traditional potters, each diya is unique. Perfect for Diwali, weddings, and religious ceremonies."
+                },
+                {
+                    name: "Terracotta Plant Pot",
+                    price: "₹1,200",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Elegant terracotta plant pot with traditional Indian motifs. Handcrafted from natural clay, perfect for indoor plants. Features drainage holes and natural terracotta color."
+                },
+                {
+                    name: "Ceramic Tea Set",
+                    price: "₹3,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Handcrafted ceramic tea set with traditional Indian patterns. Includes teapot, 4 cups, and saucers. Made from high-quality clay and glazed for durability."
+                },
+                {
+                    name: "Clay Wind Chime",
+                    price: "₹1,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Melodious clay wind chime with traditional bells. Hand-molded and fired by skilled artisans. Creates soothing sounds in your garden or balcony."
+                },
+                {
+                    name: "Terracotta Wall Hanging",
+                    price: "₹2,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Decorative terracotta wall hanging with intricate carvings. Features traditional Indian motifs and adds rustic charm to your walls."
+                },
+                {
+                    name: "Clay Water Pot",
+                    price: "₹1,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Traditional clay water pot (matka) for natural water cooling. Handcrafted by traditional potters, keeps water cool naturally. Perfect for summer months."
+                },
+                {
+                    name: "Terracotta Planter Set",
+                    price: "₹2,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Set of 5 terracotta planters in different sizes. Handcrafted with traditional Indian motifs, perfect for indoor and outdoor plants."
+                },
+                {
+                    name: "Clay Oil Lamp Set",
+                    price: "₹800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 12 traditional clay oil lamps (diyas) for festivals. Hand-molded by traditional potters, perfect for Diwali and religious ceremonies."
+                },
+                {
+                    name: "Terracotta Wall Hanging",
+                    price: "₹1,800",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Beautiful terracotta wall hanging with traditional Indian motifs. Hand-carved and painted, adds rustic charm to your walls."
+                },
+                {
+                    name: "Clay Serving Bowl Set",
+                    price: "₹1,200",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 4 clay serving bowls with traditional designs. Handcrafted by skilled potters, perfect for serving traditional Indian dishes."
+                },
+                {
+                    name: "Terracotta Garden Decor",
+                    price: "₹3,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Beautiful terracotta garden decoration set with traditional Indian designs. Weather-resistant and perfect for outdoor spaces."
+                },
+                {
+                    name: "Clay Incense Holder",
+                    price: "₹600",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Traditional clay incense holder with intricate carvings. Handcrafted by skilled artisans, perfect for meditation and prayer."
+                },
+                {
+                    name: "Terracotta Vase Collection",
+                    price: "₹2,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Collection of 3 terracotta vases in different sizes. Hand-painted with traditional Indian patterns, perfect for flowers or decoration."
                 }
             ],
             textile: [
@@ -752,6 +1416,84 @@
                     price: "₹15,999",
                     image: "https://www.shutterstock.com/image-photo/traditional-indian-kanchipuram-silk-saree-260nw-2475547005.jpg",
                     description: "Renowned for their durability and lustrous texture, Kanchipuram silk sarees from Tamil Nadu feature contrasting borders and elaborate pallus woven with gold zari. Traditional motifs include peacocks, parrots, and temple designs."
+                },
+                {
+                    name: "Handwoven Cotton Kurta",
+                    price: "₹2,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Comfortable handwoven cotton kurta with traditional Indian patterns. Made from pure cotton, perfect for casual wear. Features intricate embroidery and comfortable fit."
+                },
+                {
+                    name: "Silk Cushion Covers",
+                    price: "₹1,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 2 silk cushion covers with traditional Indian motifs. Hand-embroidered with intricate patterns, perfect for adding elegance to your living space."
+                },
+                {
+                    name: "Cotton Table Runner",
+                    price: "₹1,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Beautiful cotton table runner with traditional Indian designs. Hand-woven by skilled artisans, perfect for dining tables or decorative purposes."
+                },
+                {
+                    name: "Embroidered Wall Hanging",
+                    price: "₹3,200",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Stunning embroidered wall hanging featuring traditional Indian motifs. Hand-embroidered with colorful threads, adds cultural richness to your walls."
+                },
+                {
+                    name: "Silk Scarf",
+                    price: "₹2,800",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Elegant silk scarf with traditional Indian patterns. Made from pure silk, perfect for special occasions or as a gift. Features intricate border work."
+                },
+                {
+                    name: "Cotton Bedspread",
+                    price: "₹4,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Beautiful cotton bedspread with traditional Indian motifs. Hand-woven by skilled artisans, perfect for adding ethnic charm to your bedroom."
+                },
+                {
+                    name: "Handwoven Cotton Kurta Set",
+                    price: "₹3,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Set of 2 handwoven cotton kurtas with traditional Indian patterns. Comfortable and breathable, perfect for casual wear."
+                },
+                {
+                    name: "Silk Cushion Cover Set",
+                    price: "₹2,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 4 silk cushion covers with traditional Indian embroidery. Hand-embroidered with intricate patterns, perfect for living room."
+                },
+                {
+                    name: "Cotton Table Runner Set",
+                    price: "₹1,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 3 cotton table runners with traditional Indian designs. Hand-woven by skilled artisans, perfect for dining tables."
+                },
+                {
+                    name: "Embroidered Wall Hanging",
+                    price: "₹3,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Stunning embroidered wall hanging featuring traditional Indian motifs. Hand-embroidered with colorful threads, adds cultural richness."
+                },
+                {
+                    name: "Silk Scarf Collection",
+                    price: "₹2,200",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Collection of 2 silk scarves with traditional Indian patterns. Made from pure silk, perfect for special occasions or gifts."
+                },
+                {
+                    name: "Cotton Curtain Set",
+                    price: "₹4,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 2 cotton curtains with traditional Indian motifs. Hand-woven by skilled artisans, perfect for adding ethnic charm to windows."
+                },
+                {
+                    name: "Handwoven Cotton Bedsheet Set",
+                    price: "₹3,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 2 handwoven cotton bedsheets with traditional Indian patterns. Soft and comfortable, perfect for a good night's sleep."
                 }
             ],
             glass: [
@@ -778,15 +1520,203 @@
                     price: "₹1,299",
                     image: "https://encrypted-tbn0.gstatic.com/images?q=tbn:ANd9GcTAynym2Xo5DmrDxBToF1UTVTWEk2pjF8biqg&s",
                     description: "Handcrafted glass jewellery from India includes bangles, beads, earrings, and necklaces. Artisans use techniques like glass blowing, lampworking, and etching to create unique pieces with vibrant colors and patterns."
+                },
+                {
+                    name: "Glass Vase Set",
+                    price: "₹2,800",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Beautiful set of 3 hand-blown glass vases in different sizes. Made by skilled artisans using traditional techniques. Perfect for flowers or decorative purposes."
+                },
+                {
+                    name: "Crystal Glass Bowl",
+                    price: "₹1,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Elegant crystal glass bowl with intricate cut patterns. Hand-cut by master craftsmen, perfect for serving fruits or as a decorative centerpiece."
+                },
+                {
+                    name: "Glass Wind Chime",
+                    price: "₹2,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Melodious glass wind chime with colorful glass pieces. Handcrafted by skilled artisans, creates beautiful sounds in your garden or balcony."
+                },
+                {
+                    name: "Stained Glass Window Panel",
+                    price: "₹4,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Beautiful stained glass window panel with traditional Indian motifs. Hand-crafted with colorful glass pieces, perfect for adding elegance to your windows."
+                },
+                {
+                    name: "Glass Candle Holders",
+                    price: "₹1,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Set of 4 elegant glass candle holders with intricate designs. Hand-blown by skilled artisans, perfect for creating a warm, romantic ambiance."
+                },
+                {
+                    name: "Glass Decorative Bowl",
+                    price: "₹1,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Stunning glass decorative bowl with traditional Indian patterns. Hand-etched by skilled craftsmen, perfect for displaying decorative items or serving purposes."
+                },
+                {
+                    name: "Stained Glass Window Panel",
+                    price: "₹4,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Beautiful stained glass window panel with traditional Indian motifs. Hand-crafted with colorful glass pieces, perfect for adding elegance to windows."
+                },
+                {
+                    name: "Glass Candle Holder Set",
+                    price: "₹1,200",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Set of 4 elegant glass candle holders with intricate designs. Hand-blown by skilled artisans, perfect for creating a warm, romantic ambiance."
+                },
+                {
+                    name: "Crystal Glass Bowl Set",
+                    price: "₹2,500",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Set of 3 crystal glass bowls with traditional Indian patterns. Hand-cut by master craftsmen, perfect for serving or decoration."
+                },
+                {
+                    name: "Glass Wind Chime",
+                    price: "₹2,200",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Melodious glass wind chime with colorful glass pieces. Handcrafted by skilled artisans, creates beautiful sounds in your garden or balcony."
+                },
+                {
+                    name: "Stained Glass Lamp",
+                    price: "₹3,800",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Beautiful stained glass table lamp with traditional Indian designs. Hand-crafted with colorful glass pieces, perfect for ambient lighting."
+                },
+                {
+                    name: "Glass Jewelry Box",
+                    price: "₹1,500",
+                    image: "https://images.unsplash.com/photo-1586023492125-27b2c045efd7?w=400",
+                    description: "Elegant glass jewelry box with traditional Indian motifs. Hand-etched by skilled craftsmen, perfect for storing precious jewelry."
+                },
+                {
+                    name: "Glass Vase Collection",
+                    price: "₹2,800",
+                    image: "https://images.unsplash.com/photo-1578662996442-48f60103fc96?w=400",
+                    description: "Collection of 3 hand-blown glass vases in different sizes. Made by skilled artisans using traditional techniques, perfect for flowers or decoration."
                 }
             ]
         };
 
+        // Function to load products from Firebase
+        async function loadProductsFromFirebase() {
+            try {
+                const productsRef = window.firebase.collection(window.firebase.db, 'products');
+                const querySnapshot = await window.firebase.getDocs(productsRef);
+                
+                // Don't clear existing products - keep dummy data
+                // Object.keys(products).forEach(category => {
+                //     products[category] = [];
+                // });
+                
+                // Load products from Firebase and add to existing categories
+                querySnapshot.forEach((doc) => {
+                    const productData = doc.data();
+                    const category = productData.category || 'wood';
+                    
+                    if (!products[category]) {
+                        products[category] = [];
+                    }
+                    
+                    products[category].push({
+                        name: productData.name,
+                        price: `₹${productData.price}`,
+                        image: productData.imageUrl,
+                        description: productData.description,
+                        id: doc.id
+                    });
+                });
+                
+                console.log('✅ Products loaded from Firebase');
+            } catch (error) {
+                console.error('❌ Error loading products from Firebase:', error);
+            }
+        }
+        
+        // Function to display featured products
+        function displayFeaturedProducts() {
+            const productGrid = document.getElementById('product-grid');
+            const categoryTitle = document.querySelector('#products-section .section-title');
+            
+            // Set title
+            if (categoryTitle) {
+                categoryTitle.textContent = 'Featured Handicrafts';
+            }
+            
+            // Clear previous products
+            productGrid.innerHTML = '';
+            
+            // Get featured products (first 1 from each category, total 6)
+            const featuredProducts = [];
+            const categories = ['wood', 'metal', 'stone', 'clay', 'textile', 'glass'];
+            
+            categories.forEach(category => {
+                if (products[category] && products[category].length > 0) {
+                    featuredProducts.push(products[category][0]); // Only first product from each category
+                }
+            });
+            
+            console.log('Featured products found:', featuredProducts.length);
+            console.log('Categories available:', Object.keys(products));
+            
+            // Display featured products
+            featuredProducts.forEach(product => {
+                const productCard = document.createElement('div');
+                productCard.className = 'product-card';
+                
+                productCard.innerHTML = `
+                    <div class="product-img" style="background-image: url('${product.image}')"></div>
+                    <div class="product-info">
+                        <h3>${product.name}</h3>
+                        <div class="product-price">${product.price}</div>
+                        <p class="product-desc">${product.description}</p>
+                        <div class="product-actions">
+                            <a href="#" class="view-details" onclick="showProductDetails('${getProductCategory(product.name)}', '${product.name.replace(/'/g, "\\'")}'); return false;">View Details</a>
+                            <button class="add-to-cart-btn" onclick="addToCartDirectly('${product.name.replace(/'/g, "\\'")}', '${product.price}', '${product.image}', '${getProductCategory(product.name)}')">
+                                <i class="fas fa-shopping-cart"></i> Add to Cart
+                            </button>
+                        </div>
+                    </div>
+                `;
+                productGrid.appendChild(productCard);
+            });
+        }
+        
+        // Function to get product category by name
+        function getProductCategory(productName) {
+            for (const category in products) {
+                if (products[category]) {
+                    const found = products[category].find(p => p.name === productName);
+                    if (found) return category;
+                }
+            }
+            return 'wood'; // default
+        }
+
+        // Load products and cart when page loads
+        window.addEventListener('load', function() {
+            loadProductsFromFirebase();
+            loadCart();
+            updateCartCount();
+            
+            // Ensure cart is properly initialized
+            if (!shoppingCart) {
+                shoppingCart = [];
+            }
+            
+            // Display featured products immediately
+            displayFeaturedProducts();
+        });
+        
         // Function to show crafts based on category
         function showCrafts(category) {
             const productsSection = document.getElementById('products-section');
             const productGrid = document.getElementById('product-grid');
-            const categoryTitle = document.getElementById('craft-category-title');
+            const categoryTitle = document.querySelector('#products-section .section-title');
             
             // Set category title
             categoryTitle.textContent = category.charAt(0).toUpperCase() + category.slice(1) + " Crafts";
@@ -798,13 +1728,26 @@
             products[category].forEach(product => {
                 const productCard = document.createElement('div');
                 productCard.className = 'product-card';
+                
+                // Check if user is in seller mode
+                const isSellerMode = document.getElementById('seller-portal').style.display === 'block';
+                const deleteButton = isSellerMode && product.id ? 
+                    `<button class="delete-btn" onclick="deleteProduct('${product.id}', '${category}')">Delete</button>` : '';
+                
                 productCard.innerHTML = `
                     <div class="product-img" style="background-image: url('${product.image}')"></div>
                     <div class="product-info">
                         <h3>${product.name}</h3>
                         <div class="product-price">${product.price}</div>
                         <p class="product-desc">${product.description}</p>
-                        <a href="#" class="view-details" onclick="showProductDetails('${category}', '${product.name.replace(/'/g, "\\'")}'); return false;">View Details</a>
+                        <div class="product-actions">
+                            <a href="#" class="view-details" onclick="showProductDetails('${category}', '${product.name.replace(/'/g, "\\'")}'); return false;">View Details</a>
+                            <button class="add-to-cart-btn" onclick="addToCartDirectly('${product.name.replace(/'/g, "\\'")}', '${product.price}', '${product.image}', '${category}')">
+                                <i class="fas fa-shopping-cart"></i> Add to Cart
+                            </button>
+
+                            ${deleteButton}
+                        </div>
                     </div>
                 `;
                 productGrid.appendChild(productCard);
@@ -841,7 +1784,10 @@
                             <label for="address" style="display: block; margin-bottom: 5px; font-weight: 500;">Shipping Address:</label>
                             <textarea id="address" rows="3" style="width: 100%; padding: 10px; border: 1px solid #ddd; border-radius: 5px;"></textarea>
                         </div>
-                        <button type="button" onclick="processPayment()" class="btn" style="width: 100%;">Proceed to Payment</button>
+                        <div style="display: flex; gap: 10px; margin-top: 20px;">
+                            <button type="button" onclick="addToCart(product, '${category}')" class="btn" style="flex: 1; background-color: #28a745;">Add to Cart</button>
+                            <button type="button" onclick="processPayment()" class="btn" style="flex: 1;">Proceed to Payment</button>
+                        </div>
                     </form>
                 </div>
             `;
@@ -854,12 +1800,366 @@
             document.getElementById('product-modal').style.display = 'none';
         }
 
+        // Shopping cart functionality
+        let shoppingCart = [];
+        
+        // Load cart from localStorage
+        function loadCart() {
+            try {
+                const savedCart = localStorage.getItem('vylix-cart');
+                if (savedCart) {
+                    shoppingCart = JSON.parse(savedCart);
+                    console.log('✅ Cart loaded from localStorage:', shoppingCart.length, 'items');
+                } else {
+                    shoppingCart = [];
+                    console.log('✅ Cart initialized as empty');
+                }
+            } catch (error) {
+                console.error('❌ Error loading cart:', error);
+                shoppingCart = [];
+            }
+        }
+        
+        // Save cart to localStorage
+        function saveCart() {
+            try {
+                localStorage.setItem('vylix-cart', JSON.stringify(shoppingCart));
+                console.log('✅ Cart saved to localStorage:', shoppingCart.length, 'items');
+            } catch (error) {
+                console.error('❌ Error saving cart:', error);
+            }
+        }
+        
+        // Add to cart function (for modal)
+        function addToCart(product, category) {
+            // Check if product already exists in cart
+            const existingItemIndex = shoppingCart.findIndex(item => 
+                item.name === product.name && item.price === product.price
+            );
+            
+            if (existingItemIndex !== -1) {
+                // Product exists, check quantity limit
+                const existingItem = shoppingCart[existingItemIndex];
+                if (existingItem.quantity >= 5) {
+                    // Show limit reached notification
+                    showCartNotification(`❌ Maximum limit reached! You can only add 5 of "${product.name}" to cart.`);
+                    return;
+                } else {
+                    // Increase quantity
+                    shoppingCart[existingItemIndex].quantity += 1;
+                    saveCart();
+                    updateCartCount();
+                    showCartNotification(`✅ Added another "${product.name}" to cart! (${shoppingCart[existingItemIndex].quantity}/5)`);
+                    return;
+                }
+            }
+            
+            // Product doesn't exist, add new item
+            const cartItem = {
+                id: Date.now(),
+                name: product.name,
+                price: product.price,
+                image: product.image,
+                category: category,
+                quantity: 1,
+                addedAt: new Date()
+            };
+            
+            shoppingCart.push(cartItem);
+            saveCart();
+            updateCartCount();
+            
+            // Show a subtle notification instead of alert
+            showCartNotification(`${product.name} added to cart!`);
+        }
+        
+        // Add to cart function (for product cards)
+        function addToCartDirectly(productName, productPrice, productImage, category) {
+            // Check if product already exists in cart
+            const existingItemIndex = shoppingCart.findIndex(item => 
+                item.name === productName && item.price === productPrice
+            );
+            
+            if (existingItemIndex !== -1) {
+                // Product exists, check quantity limit
+                const existingItem = shoppingCart[existingItemIndex];
+                if (existingItem.quantity >= 5) {
+                    // Show limit reached notification
+                    showCartNotification(`❌ Maximum limit reached! You can only add 5 of "${productName}" to cart.`);
+                    return;
+                } else {
+                    // Increase quantity
+                    shoppingCart[existingItemIndex].quantity += 1;
+                    saveCart();
+                    updateCartCount();
+                    showCartNotification(`✅ Added another "${productName}" to cart! (${shoppingCart[existingItemIndex].quantity}/5)`);
+                    return;
+                }
+            }
+            
+            // Product doesn't exist, add new item
+            const cartItem = {
+                id: Date.now(),
+                name: productName,
+                price: productPrice,
+                image: productImage,
+                category: category,
+                quantity: 1,
+                addedAt: new Date()
+            };
+            
+            shoppingCart.push(cartItem);
+            saveCart();
+            updateCartCount();
+            
+            // Show a subtle notification
+            showCartNotification(`${productName} added to cart!`);
+        }
+        
+        // Show cart notification
+        function showCartNotification(message) {
+            // Create notification element
+            const notification = document.createElement('div');
+            notification.style.cssText = `
+                position: fixed;
+                top: 20px;
+                right: 20px;
+                background: #28a745;
+                color: white;
+                padding: 12px 20px;
+                border-radius: 5px;
+                box-shadow: 0 4px 12px rgba(0,0,0,0.15);
+                z-index: 10000;
+                font-weight: 500;
+                animation: slideIn 0.3s ease-out;
+            `;
+            notification.textContent = message;
+            
+            // Add animation CSS
+            const style = document.createElement('style');
+            style.textContent = `
+                @keyframes slideIn {
+                    from { transform: translateX(100%); opacity: 0; }
+                    to { transform: translateX(0); opacity: 1; }
+                }
+            `;
+            document.head.appendChild(style);
+            
+            document.body.appendChild(notification);
+            
+            // Remove after 3 seconds
+            setTimeout(() => {
+                notification.style.animation = 'slideIn 0.3s ease-out reverse';
+                setTimeout(() => {
+                    document.body.removeChild(notification);
+                }, 300);
+            }, 3000);
+        }
+        
+        // Update cart count display
+        function updateCartCount() {
+            const cartCount = document.getElementById('cart-count');
+            if (cartCount) {
+                cartCount.textContent = shoppingCart.length;
+                console.log('✅ Cart count updated:', shoppingCart.length);
+            } else {
+                console.error('❌ Cart count element not found');
+            }
+        }
+        
+        // Toggle cart dropdown
+        function toggleCartDropdown(event) {
+            event.preventDefault();
+            const dropdown = document.getElementById('cart-dropdown');
+            dropdown.classList.toggle('show');
+            
+            if (dropdown.classList.contains('show')) {
+                updateCartDropdown();
+            }
+        }
+        
+        // Update cart dropdown content
+        function updateCartDropdown() {
+            const itemsContainer = document.getElementById('cart-dropdown-items');
+            const footerContainer = document.getElementById('cart-dropdown-footer');
+            
+            if (shoppingCart.length === 0) {
+                itemsContainer.innerHTML = `
+                    <div class="cart-dropdown-empty">
+                        <i class="fas fa-shopping-cart"></i>
+                        <p>Your cart is empty</p>
+                    </div>
+                `;
+                footerContainer.innerHTML = '';
+                return;
+            }
+            
+            // Display cart items
+            let itemsHTML = '';
+            let total = 0;
+            
+            shoppingCart.forEach((item, index) => {
+                const price = parseInt(item.price.replace('₹', '').replace(',', ''));
+                total += price * (item.quantity || 1);
+                
+                itemsHTML += `
+                    <div class="cart-dropdown-item">
+                        <img src="${item.image}" alt="${item.name}">
+                        <div class="cart-dropdown-item-info">
+                            <div class="cart-dropdown-item-name">${item.name}</div>
+                            <div class="cart-dropdown-item-price">${item.price} ${item.quantity > 1 ? `× ${item.quantity}` : ''}</div>
+                        </div>
+                        <button class="cart-dropdown-item-remove" onclick="removeFromCart(${index}); updateCartDropdown();" title="Remove item">
+                            <i class="fas fa-times"></i>
+                        </button>
+                    </div>
+                `;
+            });
+            
+            itemsContainer.innerHTML = itemsHTML;
+            
+            // Display footer with total and actions
+            footerContainer.innerHTML = `
+                <div class="cart-dropdown-total">
+                    <span class="cart-dropdown-total-label">Total:</span>
+                    <span class="cart-dropdown-total-amount">₹${total.toLocaleString()}</span>
+                </div>
+                <div class="cart-dropdown-actions">
+                    <button class="cart-dropdown-btn cart-dropdown-btn-secondary" onclick="showCart(); hideCartDropdown();">
+                        View Cart
+                    </button>
+                    <button class="cart-dropdown-btn cart-dropdown-btn-primary" onclick="checkout(); hideCartDropdown();">
+                        Checkout
+                    </button>
+                </div>
+            `;
+        }
+        
+        // Hide cart dropdown
+        function hideCartDropdown() {
+            const dropdown = document.getElementById('cart-dropdown');
+            dropdown.classList.remove('show');
+        }
+        
+        // Show cart modal
+        function showCart() {
+            if (shoppingCart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            
+            let cartContent = '<h2>Shopping Cart</h2><ul style="list-style: none; padding: 0;">';
+            let total = 0;
+            
+            shoppingCart.forEach((item, index) => {
+                const price = parseInt(item.price.replace('₹', '').replace(',', ''));
+                total += price * (item.quantity || 1);
+                cartContent += `
+                    <li style="display: flex; align-items: center; margin-bottom: 15px; padding: 10px; border: 1px solid #ddd; border-radius: 5px;">
+                        <img src="${item.image}" alt="${item.name}" style="width: 60px; height: 60px; object-fit: cover; border-radius: 5px; margin-right: 15px;">
+                        <div style="flex: 1;">
+                            <h4 style="margin: 0 0 5px 0;">${item.name}</h4>
+                            <p style="margin: 0; color: #d35400; font-weight: 600;">${item.price} ${item.quantity > 1 ? `× ${item.quantity}` : ''}</p>
+                        </div>
+                        <button onclick="removeFromCart(${index})" style="background: #dc3545; color: white; border: none; padding: 5px 10px; border-radius: 3px; cursor: pointer;">Remove</button>
+                    </li>
+                `;
+            });
+            
+            cartContent += `</ul><div style="text-align: center; margin-top: 20px;">
+                <h3>Total: ₹${total.toLocaleString()}</h3>
+                <button onclick="checkout()" class="btn" style="width: 100%;">
+                    <i class="fas fa-shopping-cart"></i> Proceed to Checkout
+                </button>
+            </div>`;
+            
+            const modalContent = document.getElementById('modal-content');
+            modalContent.innerHTML = cartContent;
+            document.getElementById('product-modal').style.display = 'block';
+        }
+        
+        // Remove item from cart
+        function removeFromCart(index) {
+            shoppingCart.splice(index, 1);
+            saveCart();
+            updateCartCount();
+            showCart(); // Refresh cart display
+        }
+        
+        // Checkout function - redirect to checkout page
+        function checkout() {
+            if (shoppingCart.length === 0) {
+                alert('Your cart is empty!');
+                return;
+            }
+            
+            // Redirect to checkout page
+            window.location.href = 'checkout.html';
+        }
+        
         // Function to process payment
-        function processPayment() {
-            alert('Payment processed successfully! Thank you for your purchase.');
-            closeModal();
+        async function processPayment() {
+            const quantity = document.getElementById('quantity').value;
+            const address = document.getElementById('address').value;
+            
+            if (!address.trim()) {
+                alert('Please enter your shipping address.');
+                return;
+            }
+            
+            try {
+                // Save order to Firebase
+                const orderData = {
+                    items: shoppingCart,
+                    totalAmount: shoppingCart.reduce((sum, item) => sum + parseInt(item.price.replace('₹', '').replace(',', '')), 0),
+                    shippingAddress: address,
+                    status: 'pending',
+                    createdAt: new Date(),
+                    customerId: window.firebase.auth.currentUser?.uid || 'anonymous'
+                };
+                
+                await window.firebase.addDoc(window.firebase.collection(window.firebase.db, 'orders'), orderData);
+                
+                alert('✅ Payment processed successfully! Your order has been placed.');
+                shoppingCart = [];
+                saveCart();
+                closeModal();
+                
+            } catch (error) {
+                console.error('❌ Error processing payment:', error);
+                alert('❌ Error processing payment. Please try again.');
+            }
         }
 
+        // Function to delete product
+        async function deleteProduct(productId, category) {
+            if (!confirm('Are you sure you want to delete this product? This action cannot be undone.')) {
+                return;
+            }
+            
+            try {
+                // Delete from Firebase
+                const productRef = window.firebase.doc(window.firebase.db, 'products', productId);
+                await window.firebase.deleteDoc(productRef);
+                
+                // Remove from local products array
+                const categoryProducts = products[category];
+                const productIndex = categoryProducts.findIndex(p => p.id === productId);
+                if (productIndex > -1) {
+                    categoryProducts.splice(productIndex, 1);
+                }
+                
+                // Refresh the current category display
+                showCrafts(category);
+                
+                alert('✅ Product deleted successfully!');
+                
+            } catch (error) {
+                console.error('❌ Error deleting product:', error);
+                alert('❌ Error deleting product. Please try again.');
+            }
+        }
+        
         // Function to select user type
         function selectUser(type) {
             if (type === 'seller') {
@@ -877,8 +2177,16 @@
         // Close modal if clicked outside
         window.onclick = function(event) {
             const modal = document.getElementById('product-modal');
+            const cartDropdown = document.getElementById('cart-dropdown');
+            const cartIcon = document.querySelector('.cart-icon');
+            
             if (event.target === modal) {
                 closeModal();
+            }
+            
+            // Close cart dropdown if clicked outside
+            if (!cartIcon.contains(event.target) && cartDropdown.classList.contains('show')) {
+                hideCartDropdown();
             }
         }
 
@@ -896,14 +2204,15 @@
             }
         });
 
-        // Form submission for seller portal
-        document.getElementById('upload-form').addEventListener('submit', function(e) {
+        // Enhanced form submission for seller portal with Firebase integration
+        document.getElementById('upload-form').addEventListener('submit', async function(e) {
             e.preventDefault();
             
             const name = document.getElementById('product-name').value;
             const description = document.getElementById('product-description').value;
             const price = document.getElementById('product-price').value;
             const category = document.getElementById('product-category').value;
+            const imageFile = document.getElementById('product-image').files[0];
             
             // Simple keyword-based categorization if category is not selected
             let detectedCategory = category;
@@ -926,24 +2235,62 @@
                 }
             }
             
-            // Add the new product to the appropriate category
-            if (!products[detectedCategory]) {
-                products[detectedCategory] = [];
+            try {
+                let imageUrl = 'https://via.placeholder.com/300x300.png?text=Uploaded+Product';
+                
+                // Upload image to Cloudinary if available
+                if (imageFile && window.cloudinary) {
+                    const formData = new FormData();
+                    formData.append('file', imageFile);
+                    formData.append('upload_preset', window.cloudinary.CLOUDINARY_UPLOAD_PRESET);
+                    
+                    const uploadResponse = await fetch(window.cloudinary.CLOUDINARY_UPLOAD_URL, {
+                        method: 'POST',
+                        body: formData
+                    });
+                    
+                    if (uploadResponse.ok) {
+                        const uploadData = await uploadResponse.json();
+                        imageUrl = uploadData.secure_url;
+                        console.log('✅ Image uploaded to Cloudinary');
+                    }
+                }
+                
+                // Save product to Firebase
+                const productData = {
+                    name: name,
+                    description: description,
+                    price: parseInt(price),
+                    category: detectedCategory,
+                    imageUrl: imageUrl,
+                    createdAt: new Date(),
+                    sellerId: window.firebase.auth.currentUser?.uid || 'anonymous'
+                };
+                
+                await window.firebase.addDoc(window.firebase.collection(window.firebase.db, 'products'), productData);
+                
+                // Add to local products array for immediate display
+                if (!products[detectedCategory]) {
+                    products[detectedCategory] = [];
+                }
+                
+                const newProduct = {
+                    name: name,
+                    price: `₹${price}`,
+                    image: imageUrl,
+                    description: description
+                };
+                
+                products[detectedCategory].push(newProduct);
+                
+                alert(`✅ Product uploaded successfully to Firebase! Categorized as ${detectedCategory} crafts.`);
+                document.getElementById('upload-form').reset();
+                document.getElementById('image-preview').style.display = 'none';
+                
+            } catch (error) {
+                console.error('❌ Error uploading product:', error);
+                alert('❌ Error uploading product. Please try again.');
             }
-            
-            // For demo purposes, we'll use a placeholder image since we can't actually upload to a server
-            const newProduct = {
-                name: name,
-                price: `₹${price}`,
-                image: 'https://via.placeholder.com/300x300.png?text=Uploaded+Product',
-                description: description
-            };
-            
-            products[detectedCategory].push(newProduct);
-            
-            alert(`Product uploaded successfully! It has been categorized as ${detectedCategory} crafts.`);
-            document.getElementById('upload-form').reset();
-            document.getElementById('image-preview').style.display = 'none';
         });
 
         // Navigate home when clicking on the logo or home link
